@@ -37,7 +37,7 @@ namespace Unleash.Streaming
         {
             try
             {
-                await ApiClient.StartStreamingAsync(Settings.ExperimentalStreamingUri, this).ConfigureAwait(false);
+                await ApiClient.StartStreamingAsync(Settings.UnleashApi, this).ConfigureAwait(false);
             }
             catch (Exception ex)
             {

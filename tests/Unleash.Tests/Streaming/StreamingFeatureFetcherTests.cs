@@ -68,10 +68,11 @@ public class StreamingFeatureFetcherTests
         var settings = new UnleashSettings
         {
             UnleashApiClient = apiClient,
+            UnleashApi = uri,
             AppName = "TestApp",
             InstanceTag = "TestInstance",
             ScheduledTaskManager = new MockedTaskManager(),
-            ExperimentalStreamingUri = uri,
+            ExperimentalUseStreaming = true,
         };
         var unleash = new DefaultUnleash(settings);
         var payload = "{\"events\":[{\"type\":\"hydration\",\"eventId\":1,\"features\":[{\"name\":\"deltaFeature\",\"enabled\":true,\"strategies\":[],\"variants\":[]}],\"segments\":[]}]}";
@@ -120,7 +121,7 @@ public class StreamingFeatureFetcherTests
             AppName = "TestApp",
             InstanceTag = "TestInstance",
             ScheduledTaskManager = new MockedTaskManager(),
-            ExperimentalStreamingUri = uri
+            ExperimentalUseStreaming = true,
         };
 
         // Act
@@ -182,7 +183,7 @@ public class StreamingFeatureFetcherTests
             AppName = "TestApp",
             InstanceTag = "TestInstance",
             ScheduledTaskManager = new MockedTaskManager(),
-            ExperimentalStreamingUri = uri
+            ExperimentalUseStreaming = true,
         };
 
         // Act
@@ -241,7 +242,7 @@ public class StreamingFeatureFetcherTests
             AppName = "TestApp",
             InstanceTag = "TestInstance",
             ScheduledTaskManager = new MockedTaskManager(),
-            ExperimentalStreamingUri = uri
+            ExperimentalUseStreaming = true,
         };
 
         // Act
@@ -265,6 +266,7 @@ public class StreamingFeatureFetcherTests
         Assert.IsTrue(enabled, "Feature should be enabled after handling the message.");
         Assert.NotNull(fileContent, "File content should not be null");
         Assert.IsTrue(fileContent.StartsWith('{'));
+        Assert.IsTrue(fileContent.IndexOf("deltaFeature") > -1, "Feature flag not present in engine state");
     }
 }
 

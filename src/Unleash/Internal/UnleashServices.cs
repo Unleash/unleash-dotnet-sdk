@@ -108,7 +108,7 @@ namespace Unleash
 
             var scheduledTasks = new List<IUnleashScheduledTask>(3);
 
-            if (settings.ExperimentalStreamingUri == null)
+            if (!settings.ExperimentalUseStreaming)
             {
                 var fetchFeatureTogglesTask = new FetchFeatureTogglesTask(
                     engine,

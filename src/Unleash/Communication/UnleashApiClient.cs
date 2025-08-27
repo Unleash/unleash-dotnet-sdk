@@ -259,9 +259,10 @@ namespace Unleash.Communication
             StreamingFeatureFetcher streamingEventHandler
         )
         {
+            const string requestUri = "client/streaming";
             StreamingEventHandler = streamingEventHandler;
             EventSource = new EventSource(
-                Configuration.Builder(apiUri)
+                Configuration.Builder(new Uri(apiUri, requestUri))
                 .HttpRequestModifier((requestMessage) =>
                 {
                     SetRequestHeaders(requestMessage, clientRequestHeaders);

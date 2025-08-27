@@ -130,9 +130,9 @@ namespace Unleash
         public bool BootstrapOverride { get; set; } = true;
 
         /// <summary>
-        /// EXPERIMENTAL: Gets or sets the uri to use with streaming
+        /// EXPERIMENTAL: Gets or sets if streaming should be used
         /// </summary>
-        public Uri ExperimentalStreamingUri { get; set; }
+        public bool ExperimentalUseStreaming { get; set; }
 
         /// <summary>
         /// INTERNAL: Gets or sets if the feature toggle fetch should be immeditely scheduled. Used by the client factory to prevent redundant initial fetches.
