@@ -360,6 +360,28 @@ Dim unleash = New DefaultUnleash(unleashSettings)
 
 ```
 
+## Experimental: Streaming
+
+The default behaviour of the Unleash SDK is to use polling for updating the feature configuration. 
+Unleash is currently experimenting with enabling streaming updates via SSE. 
+If you're on a plan that supports it (one of our `Enterprise` offerings) you can reach out to customer success to have it enabled for your instance. 
+When streaming has been enabled for your instance, you can configure your SDK like this during startup:
+
+```csharp
+var settings = new UnleashSettings()
+{
+    AppName = "dotnet-test",
+    UnleashApi = new Uri("https://eu.app.unleash-hosted.com/demo/api/"),
+    CustomHttpHeaders = new Dictionary<string, string>()
+    {
+        {"Authorization", "API token" }
+    },
+    ExperimentalStreamingUri = new Uri("https://eu.app.unleash-hosted.com/demo/api/client/streaming")
+};
+```
+
+Note the setting of the `ExperimentalStreamingUri` settings property.
+
 ## Logging
 
 By default Unleash-client uses LibLog to integrate with the currently configured logger for your application.
