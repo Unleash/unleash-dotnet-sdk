@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Unleash.Internal;
 using Unleash.Events;
 using Unleash.Logging;
+using System.IO;
 
 namespace Unleash.Streaming
 {
@@ -15,16 +16,20 @@ namespace Unleash.Streaming
     {
         private static readonly ILog Logger = LogProvider.GetLogger(typeof(StreamingFeatureFetcher));
 
-        public StreamingFeatureFetcher(UnleashSettings settings, IUnleashApiClient apiClient, YggdrasilEngine engine, EventCallbackConfig eventConfig)
+        public StreamingFeatureFetcher(UnleashSettings settings, IUnleashApiClient apiClient, YggdrasilEngine engine, EventCallbackConfig eventConfig, string toggleFile, IFileSystem fileSystem)
         {
             Settings = settings;
             ApiClient = apiClient;
             Engine = engine;
             EventConfig = eventConfig;
+            ToggleFile = toggleFile;
+            FileSystem = fileSystem;
         }
 
         private YggdrasilEngine Engine { get; set; }
         private EventCallbackConfig EventConfig { get; set; }
+        private string ToggleFile { get; }
+        private IFileSystem FileSystem { get; }
         private UnleashSettings Settings { get; set; }
         private IUnleashApiClient ApiClient { get; set; }
 
@@ -61,10 +66,20 @@ namespace Unleash.Streaming
             try
             {
                 Engine.TakeState(data);
-                // TODO: implement backup storage
 
                 // now that the toggle collection has been updated, raise the toggles updated event if configured
                 EventConfig?.RaiseTogglesUpdated(new TogglesUpdatedEvent { UpdatedOn = DateTime.UtcNow });
+
+                try
+                {
+                    var state = Engine.GetState();
+                    FileSystem.WriteAllText(ToggleFile, state);
+                }
+                catch (IOException ex)
+                {
+                    Logger.Warn(() => $"UNLEASH: Exception when writing to toggle file '{ToggleFile}'.", ex);
+                    EventConfig?.RaiseError(new ErrorEvent() { ErrorType = ErrorType.TogglesBackup, Error = ex });
+                }
             }
             catch (Exception ex)
             {

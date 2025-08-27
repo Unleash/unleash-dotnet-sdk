@@ -133,7 +133,9 @@ namespace Unleash
                     settings,
                     apiClient,
                     engine,
-                    eventConfig
+                    eventConfig,
+                    backupFile,
+                    settings.FileSystem
                 );
                 Task.Run(() => StreamingFeatureFetcher.StartAsync().ConfigureAwait(false));
             }
