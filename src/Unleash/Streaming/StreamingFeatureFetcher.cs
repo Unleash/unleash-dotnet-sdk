@@ -37,7 +37,12 @@ namespace Unleash.Streaming
         {
             try
             {
-                await ApiClient.StartStreamingAsync(Settings.UnleashApi, this).ConfigureAwait(false);
+                var uri = Settings.UnleashApi;
+                if (!uri.AbsolutePath.EndsWith("/"))
+                {
+                    uri = new Uri($"{uri.AbsoluteUri}/");
+                }
+                await ApiClient.StartStreamingAsync(uri, this).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
