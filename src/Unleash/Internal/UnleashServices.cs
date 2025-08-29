@@ -52,21 +52,18 @@ namespace Unleash
 
             engine = new YggdrasilEngine(yggdrasilStrategies);
 
-            var backupFile = settings.GetFeatureToggleFilePath();
-            var etagBackupFile = settings.GetFeatureToggleETagFilePath();
-
             // Cancellation
             CancellationToken = cancellationTokenSource.Token;
             ContextProvider = settings.UnleashContextProvider;
 
-            var loader = new CachedFilesLoader(settings.FileSystem, settings.ToggleBootstrapProvider, eventConfig, backupFile, etagBackupFile, settings.BootstrapOverride);
-            var cachedFilesResult = loader.EnsureExistsAndLoad();
+            var backupManager = new FileSystemBackupManager(settings, eventConfig);
+            var backupResult = backupManager.Load();
 
-            if (!string.IsNullOrEmpty(cachedFilesResult.InitialState))
+            if (!string.IsNullOrEmpty(backupResult.FeatureState))
             {
                 try
                 {
-                    engine.TakeState(cachedFilesResult.InitialState);
+                    engine.TakeState(backupResult.FeatureState);
                 }
                 catch (Exception ex)
                 {
@@ -115,13 +112,12 @@ namespace Unleash
                     apiClient,
                     settings.FileSystem,
                     eventConfig,
-                    backupFile,
-                    etagBackupFile,
+                    backupManager,
                     settings.ThrowOnInitialFetchFail)
                 {
                     ExecuteDuringStartup = settings.ScheduleFeatureToggleFetchImmediatly,
                     Interval = settings.FetchTogglesInterval,
-                    Etag = cachedFilesResult.InitialETag
+                    Etag = backupResult.ETag
                 };
                 FetchFeatureTogglesTask = fetchFeatureTogglesTask;
 
@@ -134,8 +130,7 @@ namespace Unleash
                     apiClient,
                     engine,
                     eventConfig,
-                    backupFile,
-                    settings.FileSystem
+                    backupManager
                 );
                 Task.Run(() => StreamingFeatureFetcher.StartAsync().ConfigureAwait(false));
             }

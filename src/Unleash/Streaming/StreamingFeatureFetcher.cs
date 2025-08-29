@@ -16,19 +16,18 @@ namespace Unleash.Streaming
     {
         private static readonly ILog Logger = LogProvider.GetLogger(typeof(StreamingFeatureFetcher));
 
-        public StreamingFeatureFetcher(UnleashSettings settings, IUnleashApiClient apiClient, YggdrasilEngine engine, EventCallbackConfig eventConfig, string toggleFile, IFileSystem fileSystem)
+        public StreamingFeatureFetcher(UnleashSettings settings, IUnleashApiClient apiClient, YggdrasilEngine engine, EventCallbackConfig eventConfig, BackupManager backupManager)
         {
             Settings = settings;
             ApiClient = apiClient;
             Engine = engine;
             EventConfig = eventConfig;
-            ToggleFile = toggleFile;
-            FileSystem = fileSystem;
+            BackupManager = backupManager;
         }
 
         private YggdrasilEngine Engine { get; set; }
         private EventCallbackConfig EventConfig { get; set; }
-        private string ToggleFile { get; }
+        private BackupManager BackupManager { get; set; }
         private IFileSystem FileSystem { get; }
         private UnleashSettings Settings { get; set; }
         private IUnleashApiClient ApiClient { get; set; }
@@ -75,16 +74,7 @@ namespace Unleash.Streaming
                 // now that the toggle collection has been updated, raise the toggles updated event if configured
                 EventConfig?.RaiseTogglesUpdated(new TogglesUpdatedEvent { UpdatedOn = DateTime.UtcNow });
 
-                try
-                {
-                    var state = Engine.GetState();
-                    FileSystem.WriteAllText(ToggleFile, state);
-                }
-                catch (IOException ex)
-                {
-                    Logger.Warn(() => $"UNLEASH: Exception when writing to toggle file '{ToggleFile}'.", ex);
-                    EventConfig?.RaiseError(new ErrorEvent() { ErrorType = ErrorType.TogglesBackup, Error = ex });
-                }
+                BackupManager.Save(new Backup(Engine.GetState(), null));
             }
             catch (Exception ex)
             {

@@ -25,13 +25,13 @@ namespace Unleash.Internal
         internal static readonly Backup Empty = new Backup(string.Empty, string.Empty);
     }
 
-    internal class CachedFilesManager : BackupManager
+    internal class FileSystemBackupManager : BackupManager
     {
-        private static readonly ILog Logger = LogProvider.GetLogger(typeof(CachedFilesManager));
+        private static readonly ILog Logger = LogProvider.GetLogger(typeof(BackupManager));
         private readonly UnleashSettings settings;
         private readonly EventCallbackConfig eventCallbackConfig;
 
-        internal CachedFilesManager(UnleashSettings settings, EventCallbackConfig eventCallbackConfig)
+        internal FileSystemBackupManager(UnleashSettings settings, EventCallbackConfig eventCallbackConfig)
         {
             this.settings = settings;
             this.eventCallbackConfig = eventCallbackConfig;
