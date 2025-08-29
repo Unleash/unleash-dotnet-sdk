@@ -14,14 +14,18 @@ namespace Unleash.Tests.Internal
             string toggleFileName = AppDataFile("unleash-repo-v1.json");
             string etagFileName = AppDataFile("etag-12345.txt");
             var fileSystem = new FileSystem(Encoding.UTF8);
-            var fileLoader = new CachedFilesLoader(fileSystem, null, null, toggleFileName, etagFileName);
+            var settings = new UnleashSettings
+            {
+                FileSystem = fileSystem
+            };
+            var fileLoader = new CachedFilesLoader(settings, null);
 
             // Act
-            var ensureResult = fileLoader.EnsureExistsAndLoad();
+            var ensureResult = fileLoader.Load();
 
             // Assert
-            ensureResult.InitialETag.Should().Be("12345");
-            ensureResult.InitialState.Should().Be(fileSystem.ReadAllText(toggleFileName));
+            ensureResult.ETag.Should().Be("12345");
+            ensureResult.FeatureState.Should().Be(fileSystem.ReadAllText(toggleFileName));
         }
 
         [Test]
@@ -31,16 +35,20 @@ namespace Unleash.Tests.Internal
             string toggleFileName = AppDataFile("unleash-repo-v1.json");
             string etagFileName = AppDataFile("etag-missing.txt");
             var fileSystem = new FileSystem(Encoding.UTF8);
-            var fileLoader = new CachedFilesLoader(fileSystem, null, null, toggleFileName, etagFileName);
+            var settings = new UnleashSettings
+            {
+                FileSystem = fileSystem
+            };
+            var fileLoader = new CachedFilesLoader(settings, null);
 
             // Act
-            var ensureResult = fileLoader.EnsureExistsAndLoad();
+            var ensureResult = fileLoader.Load();
 
             // Assert
-            ensureResult.InitialETag.Should().Be(string.Empty);
+            ensureResult.ETag.Should().Be(string.Empty);
             fileSystem.FileExists(etagFileName).Should().BeTrue();
             fileSystem.ReadAllText(etagFileName).Should().Be(string.Empty);
-            ensureResult.InitialState.Should().Be(fileSystem.ReadAllText(toggleFileName));
+            ensureResult.FeatureState.Should().Be(fileSystem.ReadAllText(toggleFileName));
         }
 
         [Test]
@@ -50,14 +58,19 @@ namespace Unleash.Tests.Internal
             string toggleFileName = AppDataFile("unleash-repo-missing.json");
             string etagFileName = AppDataFile("etag-12345.txt");
             var fileSystem = new FileSystem(Encoding.UTF8);
-            var fileLoader = new CachedFilesLoader(fileSystem, null, null, toggleFileName, etagFileName);
+            var settings = new UnleashSettings
+            {
+                FileSystem = fileSystem
+            };
+
+            var fileLoader = new CachedFilesLoader(settings, null);
 
             // Act
-            var ensureResult = fileLoader.EnsureExistsAndLoad();
+            var ensureResult = fileLoader.Load();
 
             // Assert
-            ensureResult.InitialETag.Should().Be(string.Empty);
-            ensureResult.InitialState.Should().BeEmpty();
+            ensureResult.ETag.Should().Be(string.Empty);
+            ensureResult.FeatureState.Should().BeEmpty();
             fileSystem.FileExists(toggleFileName).Should().BeTrue();
             fileSystem.ReadAllText(toggleFileName).Should().Be(string.Empty);
         }
@@ -69,17 +82,21 @@ namespace Unleash.Tests.Internal
             string toggleFileName = AppDataFile("unleash-repo-missing.json");
             string etagFileName = AppDataFile("etag-missing.txt");
             var fileSystem = new FileSystem(Encoding.UTF8);
-            var fileLoader = new CachedFilesLoader(fileSystem, null, null, toggleFileName, etagFileName);
+            var settings = new UnleashSettings
+            {
+                FileSystem = fileSystem
+            };
+            var fileLoader = new CachedFilesLoader(settings, null);
 
             // Act
-            var ensureResult = fileLoader.EnsureExistsAndLoad();
+            var ensureResult = fileLoader.Load();
 
             // Assert
-            ensureResult.InitialETag.Should().Be(string.Empty);
+            ensureResult.ETag.Should().Be(string.Empty);
             fileSystem.FileExists(etagFileName).Should().BeTrue();
             fileSystem.ReadAllText(etagFileName).Should().Be(string.Empty);
 
-            ensureResult.InitialState.Should().BeEmpty();
+            ensureResult.FeatureState.Should().BeEmpty();
             fileSystem.FileExists(toggleFileName).Should().BeTrue();
             fileSystem.ReadAllText(toggleFileName).Should().Be(string.Empty);
         }

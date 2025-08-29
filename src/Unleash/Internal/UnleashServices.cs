@@ -56,7 +56,7 @@ namespace Unleash
             CancellationToken = cancellationTokenSource.Token;
             ContextProvider = settings.UnleashContextProvider;
 
-            var backupManager = new FileSystemBackupManager(settings, eventConfig);
+            var backupManager = new CachedFilesLoader(settings, eventConfig);
             var backupResult = backupManager.Load();
 
             if (!string.IsNullOrEmpty(backupResult.FeatureState))

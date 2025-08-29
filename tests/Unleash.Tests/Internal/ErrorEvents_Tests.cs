@@ -87,7 +87,8 @@ namespace Unleash.Tests.Internal
             var engine = A.Fake<YggdrasilEngine>();
             var filesystem = new MockFileSystem();
             var tokenSource = new CancellationTokenSource();
-            var task = new FetchFeatureTogglesTask(engine, fakeApiClient, filesystem, callbackConfig, "togglefile.txt", "etagfile.txt", false);
+            var backupManager = new NoOpBackupManager();
+            var task = new FetchFeatureTogglesTask(engine, fakeApiClient, filesystem, callbackConfig, backupManager, false);
 
             // Act
             try
@@ -127,7 +128,8 @@ namespace Unleash.Tests.Internal
                 .Throws(() => new IOException(exceptionMessage));
 
             var tokenSource = new CancellationTokenSource();
-            var task = new FetchFeatureTogglesTask(engine, fakeApiClient, filesystem, callbackConfig, "togglefile.txt", "etagfile.txt", false);
+            var backupManager = new NoOpBackupManager();
+            var task = new FetchFeatureTogglesTask(engine, fakeApiClient, filesystem, callbackConfig, backupManager, false);
 
             // Act
             Task.WaitAll(task.ExecuteAsync(tokenSource.Token));
@@ -155,11 +157,16 @@ namespace Unleash.Tests.Internal
                 .Throws(() => new IOException(exceptionMessage));
 
             var toggleBootstrapProvider = A.Fake<IToggleBootstrapProvider>();
+            var settings = new UnleashSettings
+            {
+                FileSystem = filesystem,
+                ToggleBootstrapProvider = toggleBootstrapProvider
+            };
 
-            var filecache = new CachedFilesLoader(filesystem, toggleBootstrapProvider, callbackConfig, "toggle.txt", "etag.txt");
+            var filecache = new CachedFilesLoader(settings, callbackConfig);
 
             // Act
-            filecache.EnsureExistsAndLoad();
+            filecache.Load();
 
             // Assert
             callbackEvent.Should().NotBeNull();
