@@ -204,7 +204,19 @@ namespace Unleash
             return Path.Combine(tempFolder, PrependFileName(EtagFilename));
         }
 
-        private string PrependFileName(string filename)
+        public string GetLegacyFeatureToggleFilePath()
+        {
+            var tempFolder = LocalStorageFolder();
+            return Path.Combine(tempFolder, LegacyPrependFileName(FeatureToggleFilename));
+        }
+
+        public string GetLegacyFeatureToggleETagFilePath()
+        {
+            var tempFolder = LocalStorageFolder();
+            return Path.Combine(tempFolder, LegacyPrependFileName(EtagFilename));
+        }
+
+        private string LegacyPrependFileName(string filename)
         {
             var invalidFileNameChars = Path.GetInvalidFileNameChars();
 
@@ -215,6 +227,19 @@ namespace Unleash
                 .Where(c => !invalidFileNameChars.Contains(c))
                 .ToArray());
         }
+
+        private string PrependFileName(string filename)
+        {
+            var invalidFileNameChars = Path.GetInvalidFileNameChars();
+
+            var extension = Path.GetExtension(filename);
+            var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(filename);
+
+            return new string($"{fileNameWithoutExtension}-{AppName}-{SdkVersion}{extension}"
+                .Where(c => !invalidFileNameChars.Contains(c))
+                .ToArray());
+        }
+
 
         public void UseBootstrapUrlProvider(string path, bool shouldThrowOnError, Dictionary<string, string> customHeaders = null)
         {

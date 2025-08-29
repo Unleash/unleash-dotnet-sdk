@@ -5,6 +5,7 @@ namespace Unleash.Internal
 {
     internal class FileSystem : IFileSystem
     {
+        public Encoding Encoding => encoding;
         private readonly Encoding encoding;
 
         public FileSystem(Encoding encoding)
@@ -35,6 +36,21 @@ namespace Unleash.Internal
         public string ReadAllText(string path)
         {
             return File.ReadAllText(path, encoding);
+        }
+
+        public void Move(string sourcePath, string destPath)
+        {
+            File.Move(sourcePath, destPath);
+        }
+
+        public void Replace(string sourceFileName, string destinationFileName, string destinationBackupFileName)
+        {
+            File.Replace(sourceFileName, destinationFileName, destinationBackupFileName);
+        }
+
+        public void Delete(string path)
+        {
+            File.Delete(path);
         }
     }
 }
