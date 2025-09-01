@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using System.Diagnostics;
+using Unleash.Tests.Mock;
 
 internal class MockedTaskManager : Unleash.Scheduling.IUnleashScheduledTaskManager
 {
@@ -211,8 +212,6 @@ public class StreamingFeatureFetcherTests
     public async Task Receives_Hydration_Events_From_Sse_Server()
     {
         // Arrange
-
-
         var updated = false;
         var server = new TestServer(new WebHostBuilder()
         .ConfigureServices(services =>
@@ -238,11 +237,14 @@ public class StreamingFeatureFetcherTests
         var clientFactory = new TestHttpClientFactory(client);
 
         var uri = new Uri("http://example.com");
+        var fileSystem = new MockFileSystem();
+
         var settings = new UnleashSettings
         {
             HttpClientFactory = clientFactory,
             AppName = "TestApp",
             InstanceTag = "TestInstance",
+            FileSystem = fileSystem,
             ScheduledTaskManager = new MockedTaskManager(),
             ExperimentalUseStreaming = true,
             UnleashApi = uri,
@@ -262,14 +264,12 @@ public class StreamingFeatureFetcherTests
         timer.Stop();
 
         var enabled = unleash.IsEnabled("deltaFeature");
-        // var backupPath = settings.GetFeatureToggleFilePath();
-        // var fileContent = File.ReadAllText(backupPath);
-
+        var fileContent = fileSystem.ReadAllText(fileSystem.ListFiles().Find(f => f.Contains("toggles"))!);
         // Assert
         Assert.IsTrue(enabled, "Feature should be enabled after handling the message.");
-    //     Assert.NotNull(fileContent, "File content should not be null");
-    //     Assert.IsTrue(fileContent.StartsWith('{'));
-    //     Assert.IsTrue(fileContent.IndexOf("deltaFeature") > -1, "Feature flag not present in engine state");
+        Assert.NotNull(fileContent, "File content should not be null");
+        Assert.IsTrue(fileContent.StartsWith('{'));
+        Assert.IsTrue(fileContent.IndexOf("deltaFeature") > -1, "Feature flag not present in engine state");
     }
 }
 

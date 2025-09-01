@@ -85,7 +85,7 @@ namespace Unleash.Scheduling
             // now that the toggle collection has been updated, raise the toggles updated event if configured
             eventConfig?.RaiseTogglesUpdated(new TogglesUpdatedEvent { UpdatedOn = DateTime.UtcNow });
 
-            backupManager.Save(new Backup(result.Etag, result.State));
+            backupManager.Save(new Backup(result.State, result.Etag));
         }
 
         public string Name => "fetch-feature-toggles-task";

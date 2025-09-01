@@ -12,8 +12,13 @@ namespace Unleash.Tests.Internal
     {
         protected string AppDataFile(string filename)
         {
-            var file = Path.Combine(TestContext.CurrentContext.TestDirectory, "App_Data", filename);
+            var file = Path.Combine(AppDataDirectory(), filename);
             return file;
+        }
+
+        protected string AppDataDirectory()
+        {
+            return Path.Combine(TestContext.CurrentContext.TestDirectory, "App_Data");
         }
     }
 }

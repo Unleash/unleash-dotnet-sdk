@@ -17,10 +17,10 @@ namespace Unleash.Internal
         public string ETag { get; }
         public string FeatureState { get; }
 
-        public Backup(string eTag, string featureState)
+        public Backup(string featureState, string eTag)
         {
-            ETag = eTag;
             FeatureState = featureState;
+            ETag = eTag;
         }
 
         internal static readonly Backup Empty = new Backup(string.Empty, string.Empty);
@@ -142,31 +142,32 @@ namespace Unleash.Internal
             }
             catch (Exception ex)
             {
-                Logger.Error(() => $"UNLEASH: Failed to write backup file {path}", ex);
+                Console.WriteLine(ex);
+                Logger.Error(() => $"UNLEASH: Failed to write backup file {path}: {ex.Message}");
                 try { if (settings.FileSystem.FileExists(path)) settings.FileSystem.Delete(path); } catch { /* swallow */ }
                 throw;
             }
         }
 
-        private string GetFeatureToggleFilePath()
+        internal string GetFeatureToggleFilePath()
         {
             var tempFolder = settings.LocalStorageFolder();
             return Path.Combine(tempFolder, PrependFileName(FeatureToggleFilename));
         }
 
-        private string GetFeatureToggleETagFilePath()
+        internal string GetFeatureToggleETagFilePath()
         {
             var tempFolder = settings.LocalStorageFolder();
             return Path.Combine(tempFolder, PrependFileName(EtagFilename));
         }
 
-        private string GetLegacyFeatureToggleFilePath()
+        internal string GetLegacyFeatureToggleFilePath()
         {
             var tempFolder = settings.LocalStorageFolder();
             return Path.Combine(tempFolder, LegacyPrependFileName(FeatureToggleFilename));
         }
 
-        private string GetLegacyFeatureToggleETagFilePath()
+        internal string GetLegacyFeatureToggleETagFilePath()
         {
             var tempFolder = settings.LocalStorageFolder();
             return Path.Combine(tempFolder, LegacyPrependFileName(EtagFilename));
