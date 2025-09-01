@@ -99,7 +99,7 @@ public class StreamingFeatureFetcherTests
         {
             app.UseRouter(router =>
             {
-                router.MapGet("/streaming", async context =>
+                router.MapGet("client/streaming", async context =>
                 {
                     var updateData = "{\"events\":[{\"type\":\"feature-updated\",\"eventId\":2,\"feature\":{\"name\":\"deltaFeature\",\"enabled\":true,\"strategies\":[],\"variants\":[]}}]}";
                     context.Response.Headers["Content-Type"] = "text/event-stream";
@@ -114,7 +114,7 @@ public class StreamingFeatureFetcherTests
         var client = server.CreateClient();
         var clientFactory = new TestHttpClientFactory(client);
 
-        var uri = new Uri("http://example.com/streaming");
+        var uri = new Uri("http://example.com/");
         var settings = new UnleashSettings
         {
             HttpClientFactory = clientFactory,
@@ -122,6 +122,7 @@ public class StreamingFeatureFetcherTests
             InstanceTag = "TestInstance",
             ScheduledTaskManager = new MockedTaskManager(),
             ExperimentalUseStreaming = true,
+            UnleashApi = uri
         };
 
         // Act
@@ -157,7 +158,7 @@ public class StreamingFeatureFetcherTests
         {
             app.UseRouter(router =>
             {
-                router.MapGet("/streaming", async context =>
+                router.MapGet("client/streaming", async context =>
                 {
                     var payload = "{\"events\":[{\"type\":\"hydration\",\"eventId\":1,\"features\":[{\"name\":\"deltaFeature\",\"enabled\":false,\"strategies\":[],\"variants\":[]}],\"segments\":[]}]}";
                     var updateData = "{\"events\":[{\"type\":\"feature-updated\",\"eventId\":2,\"feature\":{\"name\":\"deltaFeature\",\"enabled\":true,\"strategies\":[],\"variants\":[]}}]}";
@@ -176,7 +177,7 @@ public class StreamingFeatureFetcherTests
         var client = server.CreateClient();
         var clientFactory = new TestHttpClientFactory(client);
 
-        var uri = new Uri("http://example.com/streaming");
+        var uri = new Uri("http://example.com/");
         var settings = new UnleashSettings
         {
             HttpClientFactory = clientFactory,
@@ -184,6 +185,7 @@ public class StreamingFeatureFetcherTests
             InstanceTag = "TestInstance",
             ScheduledTaskManager = new MockedTaskManager(),
             ExperimentalUseStreaming = true,
+            UnleashApi = uri,
         };
 
         // Act
@@ -221,7 +223,7 @@ public class StreamingFeatureFetcherTests
         {
             app.UseRouter(router =>
             {
-                router.MapGet("/streaming", async context =>
+                router.MapGet("client/streaming", async context =>
                 {
                     var payload = "{\"events\":[{\"type\":\"hydration\",\"eventId\":1,\"features\":[{\"name\":\"deltaFeature\",\"enabled\":true,\"strategies\":[],\"variants\":[]}],\"segments\":[]}]}";
                     context.Response.Headers["Content-Type"] = "text/event-stream";
@@ -235,7 +237,7 @@ public class StreamingFeatureFetcherTests
         var client = server.CreateClient();
         var clientFactory = new TestHttpClientFactory(client);
 
-        var uri = new Uri("http://example.com/streaming");
+        var uri = new Uri("http://example.com");
         var settings = new UnleashSettings
         {
             HttpClientFactory = clientFactory,
@@ -243,6 +245,7 @@ public class StreamingFeatureFetcherTests
             InstanceTag = "TestInstance",
             ScheduledTaskManager = new MockedTaskManager(),
             ExperimentalUseStreaming = true,
+            UnleashApi = uri,
         };
 
         // Act
