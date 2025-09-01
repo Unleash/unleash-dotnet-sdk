@@ -59,11 +59,11 @@ namespace Unleash
             var backupManager = new CachedFilesLoader(settings, eventConfig);
             var backupResult = backupManager.Load();
 
-            if (!string.IsNullOrEmpty(backupResult.FeatureState))
+            if (!string.IsNullOrEmpty(backupResult.InitialState))
             {
                 try
                 {
-                    engine.TakeState(backupResult.FeatureState);
+                    engine.TakeState(backupResult.InitialState);
                 }
                 catch (Exception ex)
                 {
@@ -117,7 +117,7 @@ namespace Unleash
                 {
                     ExecuteDuringStartup = settings.ScheduleFeatureToggleFetchImmediatly,
                     Interval = settings.FetchTogglesInterval,
-                    Etag = backupResult.ETag
+                    Etag = backupResult.InitialETag
                 };
                 FetchFeatureTogglesTask = fetchFeatureTogglesTask;
 

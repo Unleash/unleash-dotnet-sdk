@@ -89,8 +89,8 @@ namespace Unleash.Tests.Internal
       // Assert
       A.CallTo(() => bootstrapProviderFake.Read())
           .MustHaveHappenedOnceExactly();
-      ensureResult.ETag.Should().Be(string.Empty);
-      ensureResult.FeatureState.Should().Be(State);
+      ensureResult.InitialETag.Should().Be(string.Empty);
+      ensureResult.InitialState.Should().Be(State);
     }
 
     [Test]
@@ -117,8 +117,8 @@ namespace Unleash.Tests.Internal
       // Assert
       A.CallTo(() => bootstrapProviderFake.Read())
           .MustHaveHappenedOnceExactly();
-      ensureResult.ETag.Should().Be(string.Empty);
-      ensureResult.FeatureState.Should().BeEmpty();
+      ensureResult.InitialETag.Should().Be(string.Empty);
+      ensureResult.InitialState.Should().BeEmpty();
     }
 
     [Test]
@@ -145,8 +145,8 @@ namespace Unleash.Tests.Internal
       // Assert
       A.CallTo(() => bootstrapProviderFake.Read())
           .MustHaveHappened();
-      ensureResult.ETag.Should().Be(string.Empty);
-      ensureResult.FeatureState.Should().Be(State);
+      ensureResult.InitialETag.Should().Be(string.Empty);
+      ensureResult.InitialState.Should().Be(State);
     }
 
     [Test]
@@ -172,8 +172,8 @@ namespace Unleash.Tests.Internal
       // Assert
       A.CallTo(() => bootstrapProviderFake.Read())
           .MustNotHaveHappened();
-      ensureResult.ETag.Should().Be("12345");
-      ensureResult.FeatureState.Should().Be("{}");
+      ensureResult.InitialETag.Should().Be("12345");
+      ensureResult.InitialState.Should().Be("{}");
     }
 
     [Test]
@@ -194,8 +194,8 @@ namespace Unleash.Tests.Internal
       var ensureResult = fileLoader.Load();
 
       // Assert
-      ensureResult.ETag.Should().Be("12345");
-      ensureResult.FeatureState.Should().Be("{}");
+      ensureResult.InitialETag.Should().Be("12345");
+      ensureResult.InitialState.Should().Be("{}");
     }
 
     [Test]
@@ -219,8 +219,8 @@ namespace Unleash.Tests.Internal
       var ensureResult = fileLoader.Load();
 
       // Assert
-      ensureResult.ETag.Should().Be("12345");
-      ensureResult.FeatureState.Should().Be("{}");
+      ensureResult.InitialETag.Should().Be("12345");
+      ensureResult.InitialState.Should().Be("{}");
     }
   }
 }

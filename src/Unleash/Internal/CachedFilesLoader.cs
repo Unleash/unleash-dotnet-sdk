@@ -14,13 +14,13 @@ namespace Unleash.Internal
 
     public class Backup
     {
-        public string ETag { get; }
-        public string FeatureState { get; }
+        public string InitialETag { get; }
+        public string InitialState { get; }
 
         public Backup(string featureState, string eTag)
         {
-            FeatureState = featureState;
-            ETag = eTag;
+            InitialState = featureState;
+            InitialETag = eTag;
         }
 
         internal static readonly Backup Empty = new Backup(string.Empty, string.Empty);
@@ -51,7 +51,7 @@ namespace Unleash.Internal
                 {
                     string bootstrapState = settings.ToggleBootstrapProvider.Read();
 
-                    return new Backup(bootstrapState ?? backup.FeatureState ?? string.Empty, backup?.ETag ?? string.Empty);
+                    return new Backup(bootstrapState ?? backup.InitialState ?? string.Empty, backup?.InitialETag ?? string.Empty);
                 }
                 return backup ?? Backup.Empty;
             }
@@ -70,8 +70,8 @@ namespace Unleash.Internal
                 // very intentionally write the feature file first. If we fail to write the feature file
                 // then then having a more up to date ETag is dangerous since when the SDK boots next time
                 // it won't correctly pull the new feature state unless it's been updated while the SDK was down
-                WriteBackup(GetFeatureToggleFilePath(), backup.FeatureState);
-                WriteBackup(GetFeatureToggleETagFilePath(), backup.ETag);
+                WriteBackup(GetFeatureToggleFilePath(), backup.InitialState);
+                WriteBackup(GetFeatureToggleETagFilePath(), backup.InitialETag);
             }
             catch (Exception ex)
             {
