@@ -88,7 +88,7 @@ namespace Unleash.Tests.Internal
                 .MustNotHaveHappened();
 
             // Act
-            fileLoader.Save(new Backup(string.Empty, "features"));
+            fileLoader.Save(new Backup("features", string.Empty));
         }
 
         [Test]
@@ -102,7 +102,7 @@ namespace Unleash.Tests.Internal
             var fileLoader = new CachedFilesLoader(settings, null);
 
             // Act
-            fileLoader.Save(new Backup("12345", "features"));
+            fileLoader.Save(new Backup("features", "12345"));
 
             // Assert
             fileSystem.ReadAllText(fileLoader.GetFeatureToggleETagFilePath()).Should().Be("12345");

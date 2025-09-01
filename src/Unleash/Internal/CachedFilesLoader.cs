@@ -43,14 +43,24 @@ namespace Unleash.Internal
 
         public Backup Load()
         {
-            var backup = LoadBackups();
-
-            if ((backup == null || settings.BootstrapOverride) && settings.ToggleBootstrapProvider != null)
+            try
             {
-                string bootstrapState = settings.ToggleBootstrapProvider.Read();
-                return new Backup(backup?.ETag ?? string.Empty, bootstrapState);
+                var backup = LoadMainBackup() ?? LoadLegacyBackup();
+
+                if ((backup == null || settings.BootstrapOverride) && settings.ToggleBootstrapProvider != null)
+                {
+                    string bootstrapState = settings.ToggleBootstrapProvider.Read();
+
+                    return new Backup(bootstrapState ?? backup.FeatureState ?? string.Empty, backup?.ETag ?? string.Empty);
+                }
+                return backup ?? Backup.Empty;
             }
-            return backup ?? Backup.Empty;
+            catch (Exception ex)
+            {
+                Logger.Warn(() => $"UNLEASH: Unexpected exception when loading backup files.", ex);
+                eventCallbackConfig?.RaiseError(new Events.ErrorEvent() { Error = ex, ErrorType = Events.ErrorType.FileCache });
+                return Backup.Empty;
+            }
         }
 
         public void Save(Backup backup)
@@ -66,21 +76,7 @@ namespace Unleash.Internal
             catch (Exception ex)
             {
                 Logger.Warn(() => $"UNLEASH: Unexpected exception when writing backup files.", ex);
-                eventCallbackConfig?.RaiseError(new Events.ErrorEvent() { Error = ex, ErrorType = Events.ErrorType.FileCache });
-            }
-        }
-
-        private Backup LoadBackups()
-        {
-            try
-            {
-                return LoadMainBackup() ?? LoadLegacyBackup();
-            }
-            catch (IOException ex)
-            {
-                Logger.Warn(() => $"UNLEASH: Unexpected exception when loading backup files.", ex);
-                eventCallbackConfig?.RaiseError(new Events.ErrorEvent() { Error = ex, ErrorType = Events.ErrorType.FileCache });
-                return null;
+                eventCallbackConfig?.RaiseError(new Events.ErrorEvent() { Error = ex, ErrorType = Events.ErrorType.TogglesBackup });
             }
         }
 
@@ -91,7 +87,7 @@ namespace Unleash.Internal
                 string toggleFileContent = settings.FileSystem.ReadAllText(GetFeatureToggleFilePath());
                 string etagFileContent = settings.FileSystem.ReadAllText(GetFeatureToggleETagFilePath());
 
-                return new Backup(etagFileContent, toggleFileContent);
+                return new Backup(toggleFileContent, etagFileContent);
             }
             catch (Exception ex) when (ex is FileNotFoundException || ex is DirectoryNotFoundException || ex is UnauthorizedAccessException)
             {
@@ -107,7 +103,7 @@ namespace Unleash.Internal
                 string toggleFileContent = settings.FileSystem.ReadAllText(GetLegacyFeatureToggleFilePath());
                 string etagFileContent = settings.FileSystem.ReadAllText(GetLegacyFeatureToggleETagFilePath());
 
-                return new Backup(etagFileContent, toggleFileContent);
+                return new Backup(toggleFileContent, etagFileContent);
             }
             catch (Exception ex) when (ex is FileNotFoundException || ex is DirectoryNotFoundException || ex is UnauthorizedAccessException)
             {
@@ -140,10 +136,8 @@ namespace Unleash.Internal
                     settings.FileSystem.Move(tempPath, path);
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine(ex);
-                Logger.Error(() => $"UNLEASH: Failed to write backup file {path}: {ex.Message}");
                 try { if (settings.FileSystem.FileExists(path)) settings.FileSystem.Delete(path); } catch { /* swallow */ }
                 throw;
             }

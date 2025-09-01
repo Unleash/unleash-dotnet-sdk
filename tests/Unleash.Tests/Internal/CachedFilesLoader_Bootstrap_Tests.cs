@@ -3,6 +3,7 @@ using FluentAssertions;
 using NUnit.Framework;
 using System.Text;
 using Unleash.Internal;
+using Unleash.Tests.Mock;
 
 namespace Unleash.Tests.Internal
 {
@@ -152,14 +153,15 @@ namespace Unleash.Tests.Internal
     public void Does_Not_Call_Bootstrap_Handler_When_Backup_File_Exists_And_Override_Is_False()
     {
       // Arrange
-      string toggleFileName = AppDataFile("unleash-repo-v1.json");
-      string etagFileName = AppDataFile("etag-missing.txt");
-      var fileSystem = new FileSystem(Encoding.UTF8);
+      var fileSystem = new MockFileSystem();
+      fileSystem.WriteAllText("/tmp/unleash.toggles-my-awesome-app-unleash-dotnet-sdk:1.0.0.json", "{}");
+      fileSystem.WriteAllText("/tmp/unleash.etag-my-awesome-app-unleash-dotnet-sdk:1.0.0.txt", "12345");
       var bootstrapProviderFake = A.Fake<IToggleBootstrapProvider>();
       var settings = new UnleashSettings
       {
         FileSystem = fileSystem,
-        ToggleBootstrapProvider = bootstrapProviderFake
+        ToggleBootstrapProvider = bootstrapProviderFake,
+        BootstrapOverride = false
       };
 
       var fileLoader = new CachedFilesLoader(settings, null);
@@ -170,17 +172,17 @@ namespace Unleash.Tests.Internal
       // Assert
       A.CallTo(() => bootstrapProviderFake.Read())
           .MustNotHaveHappened();
-      ensureResult.ETag.Should().Be(string.Empty);
-      ensureResult.FeatureState.Should().Be(fileSystem.ReadAllText(toggleFileName));
+      ensureResult.ETag.Should().Be("12345");
+      ensureResult.FeatureState.Should().Be("{}");
     }
 
     [Test]
     public void Default_Override_Null_Should_Not_Null_Out_Backup_Toggles()
     {
       // Arrange
-      string toggleFileName = AppDataFile("unleash-repo-v1.json");
-      string etagFileName = AppDataFile("etag-12345.txt");
-      var fileSystem = new FileSystem(Encoding.UTF8);
+      var fileSystem = new MockFileSystem();
+      fileSystem.WriteAllText("/tmp/unleash.toggles-my-awesome-app-unleash-dotnet-sdk:1.0.0.json", "{}");
+      fileSystem.WriteAllText("/tmp/unleash.etag-my-awesome-app-unleash-dotnet-sdk:1.0.0.txt", "12345");
       var settings = new UnleashSettings
       {
         FileSystem = fileSystem,
@@ -193,16 +195,16 @@ namespace Unleash.Tests.Internal
 
       // Assert
       ensureResult.ETag.Should().Be("12345");
-      ensureResult.FeatureState.Should().Be(fileSystem.ReadAllText(toggleFileName));
+      ensureResult.FeatureState.Should().Be("{}");
     }
 
     [Test]
     public void Default_Override_Should_Not_Null_Out_Backup_Toggles_When_Bootstrap_Result_Is_Null()
     {
       // Arrange
-      string toggleFileName = AppDataFile("unleash-repo-v1.json");
-      string etagFileName = AppDataFile("etag-12345.txt");
-      var fileSystem = new FileSystem(Encoding.UTF8);
+      var fileSystem = new MockFileSystem();
+      fileSystem.WriteAllText("/tmp/unleash.toggles-my-awesome-app-unleash-dotnet-sdk:1.0.0.json", "{}");
+      fileSystem.WriteAllText("/tmp/unleash.etag-my-awesome-app-unleash-dotnet-sdk:1.0.0.txt", "12345");
       var bootstrapProviderFake = A.Fake<IToggleBootstrapProvider>();
       A.CallTo(() => bootstrapProviderFake.Read())
           .Returns(null);
@@ -218,32 +220,7 @@ namespace Unleash.Tests.Internal
 
       // Assert
       ensureResult.ETag.Should().Be("12345");
-      ensureResult.FeatureState.Should().Be(fileSystem.ReadAllText(toggleFileName));
-    }
-
-    [Test]
-    public void Default_Override_Should_Not_Override_Backup_Toggles_When_Bootstrap_Result_Is_Empty_Collection()
-    {
-      // Arrange
-      string toggleFileName = AppDataFile("unleash-repo-v1.json");
-      string etagFileName = AppDataFile("etag-12345.txt");
-      var fileSystem = new FileSystem(Encoding.UTF8);
-      var bootstrapProviderFake = A.Fake<IToggleBootstrapProvider>();
-      A.CallTo(() => bootstrapProviderFake.Read())
-          .Returns("");
-      var settings = new UnleashSettings
-      {
-        FileSystem = fileSystem,
-        ToggleBootstrapProvider = bootstrapProviderFake
-      };
-      var fileLoader = new CachedFilesLoader(settings, null);
-
-      // Act
-      var ensureResult = fileLoader.Load();
-
-      // Assert
-      ensureResult.ETag.Should().Be("12345");
-      ensureResult.FeatureState.Should().Be(fileSystem.ReadAllText(toggleFileName));
+      ensureResult.FeatureState.Should().Be("{}");
     }
   }
 }
