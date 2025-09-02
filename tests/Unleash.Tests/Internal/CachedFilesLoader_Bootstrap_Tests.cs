@@ -154,8 +154,8 @@ namespace Unleash.Tests.Internal
         {
             // Arrange
             var fileSystem = new MockFileSystem();
-            fileSystem.WriteAllText("/tmp/unleash.toggles-my-awesome-app-unleash-dotnet-sdk:1.0.0.json", "{}");
-            fileSystem.WriteAllText("/tmp/unleash.etag-my-awesome-app-unleash-dotnet-sdk:1.0.0.txt", "12345");
+            fileSystem.WriteAllText(Path.Combine(Path.GetTempPath(), "unleash.toggles-my-awesome-app-unleash-dotnet-sdk:1.0.0.json"), "{}");
+            fileSystem.WriteAllText(Path.Combine(Path.GetTempPath(), "unleash.etag-my-awesome-app-unleash-dotnet-sdk:1.0.0.txt"), "12345");
             var bootstrapProviderFake = A.Fake<IToggleBootstrapProvider>();
             var settings = new UnleashSettings
             {
@@ -181,8 +181,8 @@ namespace Unleash.Tests.Internal
         {
             // Arrange
             var fileSystem = new MockFileSystem();
-            fileSystem.WriteAllText("/tmp/unleash.toggles-my-awesome-app-unleash-dotnet-sdk:1.0.0.json", "{}");
-            fileSystem.WriteAllText("/tmp/unleash.etag-my-awesome-app-unleash-dotnet-sdk:1.0.0.txt", "12345");
+            fileSystem.WriteAllText(Path.Combine(Path.GetTempPath(), "unleash.toggles-my-awesome-app-unleash-dotnet-sdk:1.0.0.json"), "{}");
+            fileSystem.WriteAllText(Path.Combine(Path.GetTempPath(), "unleash.etag-my-awesome-app-unleash-dotnet-sdk:1.0.0.txt"), "12345");
             var settings = new UnleashSettings
             {
                 FileSystem = fileSystem,
@@ -203,8 +203,9 @@ namespace Unleash.Tests.Internal
         {
             // Arrange
             var fileSystem = new MockFileSystem();
-            fileSystem.WriteAllText("/tmp/unleash.toggles-my-awesome-app-unleash-dotnet-sdk:1.0.0.json", "{}");
-            fileSystem.WriteAllText("/tmp/unleash.etag-my-awesome-app-unleash-dotnet-sdk:1.0.0.txt", "12345");
+            // fileSystem.WriteAllText("/tmp/unleash.toggles-my-awesome-app-unleash-dotnet-sdk:1.0.0.json", "{}");
+            fileSystem.WriteAllText(Path.Combine(Path.GetTempPath(), "unleash.toggles-my-awesome-app-unleash-dotnet-sdk:1.0.0.json"), "{}");
+            fileSystem.WriteAllText(Path.Combine(Path.GetTempPath(), "unleash.etag-my-awesome-app-unleash-dotnet-sdk:1.0.0.txt"), "12345");
             var bootstrapProviderFake = A.Fake<IToggleBootstrapProvider>();
             A.CallTo(() => bootstrapProviderFake.Read())
                 .Returns(null);
