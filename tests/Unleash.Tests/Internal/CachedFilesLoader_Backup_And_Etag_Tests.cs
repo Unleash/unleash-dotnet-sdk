@@ -20,8 +20,8 @@ namespace Unleash.Tests.Internal
 
             };
             var fileLoader = new CachedFilesLoader(settings, null);
-            fileSystem.WriteAllText(fileLoader.GetFeatureToggleETagFilePath(), "12345");
-            fileSystem.WriteAllText(fileLoader.GetFeatureToggleFilePath(), "features");
+            fileSystem.WriteAllText(CachedFilesLoader.GetFeatureToggleETagFilePath(settings), "12345");
+            fileSystem.WriteAllText(CachedFilesLoader.GetFeatureToggleFilePath(settings), "features");
 
             // Act
             var ensureResult = fileLoader.Load();
@@ -60,8 +60,8 @@ namespace Unleash.Tests.Internal
                 FileSystem = fileSystem
             };
             var fileLoader = new CachedFilesLoader(settings, null);
-            fileSystem.WriteAllText(fileLoader.GetLegacyFeatureToggleETagFilePath(), "12345");
-            fileSystem.WriteAllText(fileLoader.GetLegacyFeatureToggleFilePath(), "features");
+            fileSystem.WriteAllText(CachedFilesLoader.GetLegacyFeatureToggleETagFilePath(settings), "12345");
+            fileSystem.WriteAllText(CachedFilesLoader.GetLegacyFeatureToggleFilePath(settings), "features");
 
             // Act
             var ensureResult = fileLoader.Load();
@@ -82,9 +82,9 @@ namespace Unleash.Tests.Internal
             };
             var fileLoader = new CachedFilesLoader(settings, null);
 
-            A.CallTo(() => fileSystem.WriteAllText(fileLoader.GetFeatureToggleFilePath(), A<string>._))
+            A.CallTo(() => fileSystem.WriteAllText(CachedFilesLoader.GetFeatureToggleFilePath(settings), A<string>._))
                 .Throws<IOException>();
-            A.CallTo(() => fileSystem.WriteAllText(fileLoader.GetFeatureToggleETagFilePath(), A<string>._))
+            A.CallTo(() => fileSystem.WriteAllText(CachedFilesLoader.GetFeatureToggleETagFilePath(settings), A<string>._))
                 .MustNotHaveHappened();
 
             // Act
@@ -105,8 +105,8 @@ namespace Unleash.Tests.Internal
             fileLoader.Save(new Backup("features", "12345"));
 
             // Assert
-            fileSystem.ReadAllText(fileLoader.GetFeatureToggleETagFilePath()).Should().Be("12345");
-            fileSystem.ReadAllText(fileLoader.GetFeatureToggleFilePath()).Should().Be("features");
+            fileSystem.ReadAllText(CachedFilesLoader.GetFeatureToggleETagFilePath(settings)).Should().Be("12345");
+            fileSystem.ReadAllText(CachedFilesLoader.GetFeatureToggleFilePath(settings)).Should().Be("features");
         }
     }
 }

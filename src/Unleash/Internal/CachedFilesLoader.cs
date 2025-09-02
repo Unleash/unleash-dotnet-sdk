@@ -143,31 +143,27 @@ namespace Unleash.Internal
             }
         }
 
-        internal string GetFeatureToggleFilePath()
+        private string GetFeatureToggleFilePath()
         {
-            var tempFolder = settings.LocalStorageFolder();
-            return Path.Combine(tempFolder, PrependFileName(FeatureToggleFilename));
+            return GetFeatureToggleFilePath(settings);
         }
 
-        internal string GetFeatureToggleETagFilePath()
+        private string GetFeatureToggleETagFilePath()
         {
-            var tempFolder = settings.LocalStorageFolder();
-            return Path.Combine(tempFolder, PrependFileName(EtagFilename));
+            return GetFeatureToggleETagFilePath(settings);
         }
 
-        internal string GetLegacyFeatureToggleFilePath()
+        private string GetLegacyFeatureToggleFilePath()
         {
-            var tempFolder = settings.LocalStorageFolder();
-            return Path.Combine(tempFolder, LegacyPrependFileName(FeatureToggleFilename));
+            return GetLegacyFeatureToggleFilePath(settings);
         }
 
-        internal string GetLegacyFeatureToggleETagFilePath()
+        private string GetLegacyFeatureToggleETagFilePath()
         {
-            var tempFolder = settings.LocalStorageFolder();
-            return Path.Combine(tempFolder, LegacyPrependFileName(EtagFilename));
+            return GetLegacyFeatureToggleETagFilePath(settings);
         }
 
-        private string LegacyPrependFileName(string filename)
+        private static string LegacyPrependFileName(string filename, UnleashSettings settings)
         {
             var invalidFileNameChars = Path.GetInvalidFileNameChars();
 
@@ -179,7 +175,7 @@ namespace Unleash.Internal
                 .ToArray());
         }
 
-        private string PrependFileName(string filename)
+        private static string PrependFileName(string filename, UnleashSettings settings)
         {
             var invalidFileNameChars = Path.GetInvalidFileNameChars();
 
@@ -191,6 +187,29 @@ namespace Unleash.Internal
                 .ToArray());
         }
 
+        internal static string GetFeatureToggleFilePath(UnleashSettings settings)
+        {
+            var tempFolder = settings.LocalStorageFolder();
+            return Path.Combine(tempFolder, PrependFileName(FeatureToggleFilename, settings));
+        }
+
+        internal static string GetFeatureToggleETagFilePath(UnleashSettings settings)
+        {
+            var tempFolder = settings.LocalStorageFolder();
+            return Path.Combine(tempFolder, PrependFileName(EtagFilename, settings));
+        }
+
+        internal static string GetLegacyFeatureToggleFilePath(UnleashSettings settings)
+        {
+            var tempFolder = settings.LocalStorageFolder();
+            return Path.Combine(tempFolder, settings.AppName, LegacyPrependFileName(FeatureToggleFilename, settings));
+        }
+
+        internal static string GetLegacyFeatureToggleETagFilePath(UnleashSettings settings)
+        {
+            var tempFolder = settings.LocalStorageFolder();
+            return Path.Combine(tempFolder, settings.AppName, LegacyPrependFileName(EtagFilename, settings));
+        }
     }
 
     public class NoOpBackupManager : BackupManager
