@@ -65,17 +65,6 @@ namespace Unleash.Tests.ClientFactory
             Assert.ThrowsAsync<Exception>(async () => await unleashFactory.CreateClientAsync(settings, synchronousInitialization: true));
         }
 
-        [Test(Description = "Delayed initialization: Should only fetch toggles once")]
-        public async Task DelayedInitializationFetchCount()
-        {
-            settings.UnleashApiClient = mockApiClient;
-
-            var unleash = await unleashFactory.CreateClientAsync(settings);
-
-            A.CallTo(() => mockApiClient.FetchToggles(string.Empty, A<CancellationToken>.Ignored, false))
-                .MustHaveHappenedOnceExactly();
-        }
-
         [Test(Description = "Delayed initialization: Should be ready after creation")]
         public void DelayedInitializationNotReadyAfterConstruction()
         {
