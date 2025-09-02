@@ -60,7 +60,7 @@ internal class StubbedApiClient : IUnleashApiClient
 public class StreamingFeatureFetcherTests
 {
     [Test]
-    public void Handles_Messages()
+    public async Task Handles_Messages()
     {
         // Arrange
         var apiClient = new StubbedApiClient();
@@ -76,6 +76,7 @@ public class StreamingFeatureFetcherTests
         };
         var unleash = new DefaultUnleash(settings);
         var payload = "{\"events\":[{\"type\":\"hydration\",\"eventId\":1,\"features\":[{\"name\":\"deltaFeature\",\"enabled\":true,\"strategies\":[],\"variants\":[]}],\"segments\":[]}]}";
+        await unleash.services.StreamingFeatureFetcher.StartAsync().ConfigureAwait(false);
 
         // Act
         apiClient.StreamingEventHandler.HandleMessage(null, new MessageReceivedEventArgs(new MessageEvent("unleash-connected", payload, uri)));
