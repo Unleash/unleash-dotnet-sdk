@@ -14,7 +14,7 @@ namespace Unleash.Scheduling
     internal class FetchFeatureTogglesTask : IUnleashScheduledTask
     {
         private static readonly ILog Logger = LogProvider.GetLogger(typeof(FetchFeatureTogglesTask));
-        private readonly BackupManager backupManager;
+        private readonly IBackupManager backupManager;
         private readonly IFileSystem fileSystem;
         private readonly EventCallbackConfig eventConfig;
         private readonly IUnleashApiClient apiClient;
@@ -30,7 +30,7 @@ namespace Unleash.Scheduling
             IUnleashApiClient apiClient,
             IFileSystem fileSystem,
             EventCallbackConfig eventConfig,
-            BackupManager backupManager,
+            IBackupManager backupManager,
             bool throwOnInitialLoadFail)
         {
             this.engine = engine;

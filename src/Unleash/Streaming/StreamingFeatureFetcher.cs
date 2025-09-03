@@ -16,7 +16,7 @@ namespace Unleash.Streaming
     {
         private static readonly ILog Logger = LogProvider.GetLogger(typeof(StreamingFeatureFetcher));
 
-        public StreamingFeatureFetcher(UnleashSettings settings, IUnleashApiClient apiClient, YggdrasilEngine engine, EventCallbackConfig eventConfig, BackupManager backupManager)
+        public StreamingFeatureFetcher(UnleashSettings settings, IUnleashApiClient apiClient, YggdrasilEngine engine, EventCallbackConfig eventConfig, IBackupManager backupManager)
         {
             Settings = settings;
             ApiClient = apiClient;
@@ -27,7 +27,7 @@ namespace Unleash.Streaming
 
         private YggdrasilEngine Engine { get; set; }
         private EventCallbackConfig EventConfig { get; set; }
-        private BackupManager BackupManager { get; set; }
+        private IBackupManager BackupManager { get; set; }
         private IFileSystem FileSystem { get; }
         private UnleashSettings Settings { get; set; }
         private IUnleashApiClient ApiClient { get; set; }

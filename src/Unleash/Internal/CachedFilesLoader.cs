@@ -5,7 +5,7 @@ using Unleash.Logging;
 
 namespace Unleash.Internal
 {
-    public interface BackupManager
+    public interface IBackupManager
     {
         void Save(Backup backup);
         Backup Load();
@@ -26,12 +26,12 @@ namespace Unleash.Internal
         internal static readonly Backup Empty = new Backup(string.Empty, string.Empty);
     }
 
-    internal class CachedFilesLoader : BackupManager
+    internal class CachedFilesLoader : IBackupManager
     {
         static internal readonly string FeatureToggleFilename = "unleash.toggles.json";
         static internal readonly string EtagFilename = "unleash.etag.txt";
 
-        private static readonly ILog Logger = LogProvider.GetLogger(typeof(BackupManager));
+        private static readonly ILog Logger = LogProvider.GetLogger(typeof(CachedFilesLoader));
         private readonly UnleashSettings settings;
         private readonly EventCallbackConfig eventCallbackConfig;
 
@@ -212,7 +212,7 @@ namespace Unleash.Internal
         }
     }
 
-    public class NoOpBackupManager : BackupManager
+    public class NoOpBackupManager : IBackupManager
     {
         public Backup Load() => Backup.Empty;
         public void Save(Backup backup) { }
