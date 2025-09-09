@@ -499,7 +499,20 @@ settings.UseBootstrapUrlProvider("://domain.top/path/to/file.json", shouldThrowO
 ## Run unleash server with Docker locally
 The Unleash team have made a separate project which runs unleash server inside docker. Please see [unleash-docker](https://github.com/Unleash/unleash-docker) for more details.
 
-## Development
+## Unit Testing
+You may want to mock the `IUnleash` interface in your unit tests. The SDK comes with a `FakeUnleash` implementation that you can use for this purpose.
+
+Example usage:
+
+```csharp
+var fakeUnleash = new FakeUnleash(); // Toggles and variants will be disabled by default
+fakeUnleash.EnableAllToggles(); // All toggles will be enabled
+fakeUnleash.DisableAllToggles(); // All toggles will be disabled
+fakeUnleash.SetToggle("MyFeature", true); // Set a specific toggle to enabled
+fakeUnleash.SetVariant("MyVariantFeature", new Variant("MyVariantFeature", new Payload("string", "valueA"), true, true)); // Set a specific variant
+```
+
+## SDK Development
 
 ### Setup/Tool suggestions/Requirements
 Visual Studio Community / VS Code / JetBrains Rider
