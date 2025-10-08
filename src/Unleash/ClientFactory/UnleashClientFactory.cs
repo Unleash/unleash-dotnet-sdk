@@ -37,7 +37,7 @@ namespace Unleash.ClientFactory
                 catch (Exception ex)
                 {
                     unleash.Dispose();
-                    throw ex;
+                    throw;
                 }
 
                 return unleash;
