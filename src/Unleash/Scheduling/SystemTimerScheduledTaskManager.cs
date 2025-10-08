@@ -92,20 +92,19 @@ namespace Unleash.Scheduling
         public void Dispose()
         {
             if (_disposed) return;
+
             _shuttingDown = true;
-
             var timeout = TimeSpan.FromSeconds(1);
+            var timerNames = new List<string>(timers.Keys.AsEnumerable());
 
-            var keys = new List<string>(timers.Keys.AsEnumerable());
-
-            foreach (var k in keys)
+            foreach (var name in timerNames)
             {
-                timers[k]?.Change(Timeout.Infinite, Timeout.Infinite);
+                timers[name]?.Change(Timeout.Infinite, Timeout.Infinite);
             }
 
-            foreach (var k in keys)
+            foreach (var name in timerNames)
             {
-                var t = timers[k];
+                var t = timers[name];
                 if (t is null) continue;
 
                 using (var done = new ManualResetEvent(false))
@@ -114,11 +113,8 @@ namespace Unleash.Scheduling
                     if (willSignal)
                     {
                         if (!done.WaitOne(timeout))
-                            throw new TimeoutException($"Timeout waiting for timer '{k}' to stop.");
+                            throw new TimeoutException($"Timeout waiting for timer '{name}' to stop.");
                     }
-
-                    timers.Remove(k);
-
                 }
             }
 
