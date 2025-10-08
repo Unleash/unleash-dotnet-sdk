@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Unleash.Internal;
@@ -31,6 +32,8 @@ namespace Unleash.Scheduling
 
             async void Callback(object state)
             {
+                if (_shuttingDown) return;
+                
                 try
                 {
                     if (!cancellationToken.IsCancellationRequested)
@@ -56,7 +59,7 @@ namespace Unleash.Scheduling
                         // Stop the timer.
                         if (timers.ContainsKey(name))
                         {
-                            timers[name].SafeTimerChange(Timeout.Infinite, Timeout.Infinite, ref disposeEnded);
+                            timers[name].SafeTimerChange(Timeout.Infinite, Timeout.Infinite, ref _disposed);
                         }
                     }
                 }
@@ -80,34 +83,47 @@ namespace Unleash.Scheduling
             timers.Add(name, timer);
 
             // Now it's ok to start the timer.
-            timer.SafeTimerChange(dueTime, period, ref disposeEnded);
+            timer.SafeTimerChange(dueTime, period, ref _disposed);
         }
 
-        private bool disposeEnded;
+        private volatile bool _shuttingDown;
+        private bool _disposed;
+
         public void Dispose()
         {
-            if (disposeEnded)
-                return;
+            if (_disposed) return;
+            _shuttingDown = true;
 
             var timeout = TimeSpan.FromSeconds(1);
 
-            using (var waitHandle = new ManualResetEvent(false))
+            var keys = new List<string>(timers.Keys.AsEnumerable());
+
+            foreach (var k in keys)
             {
-                foreach (var task in timers)
+                timers[k]?.Change(Timeout.Infinite, Timeout.Infinite);
+            }
+
+            foreach (var k in keys)
+            {
+                var t = timers[k];
+                if (t is null) continue;
+
+                using (var done = new ManualResetEvent(false))
                 {
-                    // Returns false on second dispose
-                    if (task.Value.Dispose(waitHandle))
+                    var willSignal = t.Dispose(done);
+                    if (willSignal)
                     {
-                        if (!waitHandle.WaitOne(timeout))
-                        {
-                            throw new TimeoutException($"UNLEASH: Timeout waiting for task '{task.Key}' to stop..");
-                        }
+                        if (!done.WaitOne(timeout))
+                            throw new TimeoutException($"Timeout waiting for timer '{k}' to stop.");
                     }
+
+                    timers.Remove(k);
+                        
                 }
             }
 
-            disposeEnded = true;
             timers.Clear();
+            _disposed = true;
         }
     }
 }

@@ -101,9 +101,10 @@ namespace Unleash
 
         /// <summary>
         /// Gets or sets the scheduled task manager used for syncing feature toggles and metrics with the backend in the background.
-        /// Default: An implementation based on System.Threading.Timers
+        /// If not set will provide an internal implementation based on System.Threading.Timers
         /// </summary>
-        public IUnleashScheduledTaskManager ScheduledTaskManager { get; set; } = new SystemTimerScheduledTaskManager();
+        [Obsolete("Will be removed in an upcoming major version", false)]
+        public IUnleashScheduledTaskManager ScheduledTaskManager { get; set; }
 
 
         /// <summary>

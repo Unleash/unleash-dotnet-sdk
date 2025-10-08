@@ -44,7 +44,7 @@ namespace Unleash.Tests.ClientFactory
             unleash.IsEnabled("one-enabled", false)
                 .Should().BeTrue();
         }
-
+    
         [Test(Description = "Immediate initialization: Should bubble up errors")]
         public void ImmediateInitializationBubbleErrors()
         {
@@ -176,6 +176,30 @@ namespace Unleash.Tests.ClientFactory
                     }
                 });
             });
+        }
+
+        [Test]
+        public void Failing_Synchronous_Initialization_Can_Still_Create_New_Instance()
+        {
+            var settings = new UnleashSettings
+            {
+                AppName = "test-app-name",
+                UnleashApi = new Uri("http://localhost:33/does/not/exist/api"),
+                CustomHttpHeaders = new Dictionary<string, string>()
+                {
+                    { "Authorization", "Token" },
+                }
+            };
+
+            var factory = new UnleashClientFactory();
+            Assert.ThrowsAsync<UnleashException>(async () =>
+            {
+                var failingUnleashInit = await factory.CreateClientAsync(settings, synchronousInitialization: true);
+            });
+
+            var unleash = new DefaultUnleash(settings);
+            Assert.IsNotNull(unleash);
+            Assert.True(unleash.IsEnabled("some-toggle", true));
         }
 
         private IUnleash GetUnleash(HttpResponseMessage response)

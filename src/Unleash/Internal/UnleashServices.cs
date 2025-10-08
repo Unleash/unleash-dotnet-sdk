@@ -99,7 +99,7 @@ namespace Unleash
                 apiClient = settings.UnleashApiClient;
             }
 
-            scheduledTaskManager = settings.ScheduledTaskManager;
+            scheduledTaskManager = settings.ScheduledTaskManager ?? new SystemTimerScheduledTaskManager();
 
             IsMetricsDisabled = settings.SendMetricsInterval == null;
 
@@ -174,6 +174,10 @@ namespace Unleash
             }
 
             engine?.Dispose();
+            if (scheduledTaskManager != null && !(scheduledTaskManager is SystemTimerScheduledTaskManager))
+            {
+                Logger.Warn(() => $"UNLEASH: Disposing ScheduledTaskManager of type {scheduledTaskManager.GetType().Name}");
+            }
             scheduledTaskManager?.Dispose();
             StreamingFeatureFetcher?.Dispose();
         }
