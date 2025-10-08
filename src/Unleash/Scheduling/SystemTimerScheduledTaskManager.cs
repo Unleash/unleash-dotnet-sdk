@@ -33,7 +33,7 @@ namespace Unleash.Scheduling
             async void Callback(object state)
             {
                 if (_shuttingDown) return;
-                
+
                 try
                 {
                     if (!cancellationToken.IsCancellationRequested)
@@ -118,7 +118,7 @@ namespace Unleash.Scheduling
                     }
 
                     timers.Remove(k);
-                        
+
                 }
             }
 

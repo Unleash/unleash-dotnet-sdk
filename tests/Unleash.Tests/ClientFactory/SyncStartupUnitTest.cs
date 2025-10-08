@@ -44,7 +44,7 @@ namespace Unleash.Tests.ClientFactory
             unleash.IsEnabled("one-enabled", false)
                 .Should().BeTrue();
         }
-    
+
         [Test(Description = "Immediate initialization: Should bubble up errors")]
         public void ImmediateInitializationBubbleErrors()
         {
