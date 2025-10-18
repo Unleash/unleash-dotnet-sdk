@@ -87,7 +87,8 @@ namespace Unleash.Tests.Internal
             var engine = A.Fake<YggdrasilEngine>();
             var filesystem = new MockFileSystem();
             var tokenSource = new CancellationTokenSource();
-            var task = new FetchFeatureTogglesTask(engine, fakeApiClient, filesystem, callbackConfig, "togglefile.txt", "etagfile.txt", false);
+            var backupManager = new NoOpBackupManager();
+            var task = new FetchFeatureTogglesTask(engine, fakeApiClient, filesystem, callbackConfig, backupManager, false);
 
             // Act
             try
@@ -106,31 +107,29 @@ namespace Unleash.Tests.Internal
         }
 
         [Test]
-        public void FetchFeatureToggleTask_Etag_Writing_Throws_Raises_ErrorEvent()
+        public void CachedFileLoader_Saving_Raises_ErrorEvent()
         {
             // Arrange
             ErrorEvent callbackEvent = null;
-            var exceptionMessage = "Writing failed";
             var callbackConfig = new EventCallbackConfig()
             {
                 ErrorEvent = evt => { callbackEvent = evt; }
             };
 
-            var fakeApiClient = A.Fake<IUnleashApiClient>();
-            A.CallTo(() => fakeApiClient.FetchToggles(A<string>._, A<CancellationToken>._, false))
-                .Returns(Task.FromResult(new FetchTogglesResult() { HasChanged = true, State = "", Etag = "one" }));
-
-            var engine = A.Fake<YggdrasilEngine>();
-
+            var exceptionMessage = "Writing failed";
             var filesystem = A.Fake<IFileSystem>();
-            A.CallTo(() => filesystem.WriteAllText(A<string>._, A<string>._))
+            A.CallTo(() => filesystem.FileOpenCreate(A<string>._))
                 .Throws(() => new IOException(exceptionMessage));
 
-            var tokenSource = new CancellationTokenSource();
-            var task = new FetchFeatureTogglesTask(engine, fakeApiClient, filesystem, callbackConfig, "togglefile.txt", "etagfile.txt", false);
+            var settings = new UnleashSettings
+            {
+                FileSystem = filesystem
+            };
+
+            var filecache = new CachedFilesLoader(settings, callbackConfig);
 
             // Act
-            Task.WaitAll(task.ExecuteAsync(tokenSource.Token));
+            filecache.Save(new Backup("{}", "etag"));
 
             // Assert
             callbackEvent.Should().NotBeNull();
@@ -140,7 +139,7 @@ namespace Unleash.Tests.Internal
         }
 
         [Test]
-        public void CachedFilesLoader_Raises_ErrorEvent()
+        public void CachedFilesLoader_Loading_Raises_ErrorEvent()
         {
             // Arrange
             ErrorEvent callbackEvent = null;
@@ -149,17 +148,20 @@ namespace Unleash.Tests.Internal
                 ErrorEvent = evt => { callbackEvent = evt; }
             };
 
-            var exceptionMessage = "Writing failed";
+            var exceptionMessage = "Reading failed";
             var filesystem = A.Fake<IFileSystem>();
-            A.CallTo(() => filesystem.WriteAllText(A<string>._, A<string>._))
+            A.CallTo(() => filesystem.ReadAllText(A<string>._))
                 .Throws(() => new IOException(exceptionMessage));
 
-            var toggleBootstrapProvider = A.Fake<IToggleBootstrapProvider>();
+            var settings = new UnleashSettings
+            {
+                FileSystem = filesystem,
+            };
 
-            var filecache = new CachedFilesLoader(filesystem, toggleBootstrapProvider, callbackConfig, "toggle.txt", "etag.txt");
+            var filecache = new CachedFilesLoader(settings, callbackConfig);
 
             // Act
-            filecache.EnsureExistsAndLoad();
+            filecache.Load();
 
             // Assert
             callbackEvent.Should().NotBeNull();
@@ -168,7 +170,7 @@ namespace Unleash.Tests.Internal
         }
 
         [Test]
-        public void Engine_TakeState_InvalidJson_Throws_Raises_ErrorEvent()
+        public void CachedFilesLoader_Bootstrapping_Raises_ErrorEvent()
         {
             // Arrange
             ErrorEvent callbackEvent = null;
@@ -177,16 +179,22 @@ namespace Unleash.Tests.Internal
                 ErrorEvent = evt => { callbackEvent = evt; }
             };
 
-            var bootstrapProviderFake = A.Fake<IToggleBootstrapProvider>();
-            A.CallTo(() => bootstrapProviderFake.Read())
-                .Returns("Something that is definitely not valid JSON");
+            var exceptionMessage = "Bootstrapping failed";
+            var filesystem = A.Fake<IFileSystem>();
+
+            var toggleBootstrapProvider = A.Fake<IToggleBootstrapProvider>();
+            A.CallTo(() => toggleBootstrapProvider.Read())
+                .Throws(() => new IOException(exceptionMessage));
+            var settings = new UnleashSettings
+            {
+                FileSystem = filesystem,
+                ToggleBootstrapProvider = toggleBootstrapProvider
+            };
+
+            var filecache = new CachedFilesLoader(settings, callbackConfig);
 
             // Act
-            new UnleashServices(new UnleashSettings()
-            {
-                ToggleBootstrapProvider = bootstrapProviderFake,
-                BootstrapOverride = true
-            }, callbackConfig);
+            filecache.Load();
 
             // Assert
             callbackEvent.Should().NotBeNull();

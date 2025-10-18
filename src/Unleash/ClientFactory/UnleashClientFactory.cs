@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Unleash.Strategies;
 
@@ -25,11 +26,19 @@ namespace Unleash.ClientFactory
                 settings.ScheduleFeatureToggleFetchImmediatly = false;
                 settings.ThrowOnInitialFetchFail = true;
                 var unleash = new DefaultUnleash(settings, strategies);
-                TaskFactory
-                    .StartNew(() => unleash.services.FetchFeatureTogglesTask.ExecuteAsync(CancellationToken.None))
-                    .Unwrap()
-                    .GetAwaiter()
-                    .GetResult();
+                try
+                {
+                    TaskFactory
+                        .StartNew(() => unleash.services.FetchFeatureTogglesTask.ExecuteAsync(CancellationToken.None))
+                        .Unwrap()
+                        .GetAwaiter()
+                        .GetResult();
+                }
+                catch (Exception ex)
+                {
+                    unleash.Dispose();
+                    throw;
+                }
 
                 return unleash;
             }
@@ -49,7 +58,15 @@ namespace Unleash.ClientFactory
                 settings.ScheduleFeatureToggleFetchImmediatly = false;
                 settings.ThrowOnInitialFetchFail = true;
                 var unleash = new DefaultUnleash(settings, strategies);
-                await unleash.services.FetchFeatureTogglesTask.ExecuteAsync(CancellationToken.None).ConfigureAwait(false);
+                try
+                {
+                    await unleash.services.FetchFeatureTogglesTask.ExecuteAsync(CancellationToken.None).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    unleash.Dispose();
+                    throw;
+                }
                 return unleash;
             }
             return new DefaultUnleash(settings, strategies);

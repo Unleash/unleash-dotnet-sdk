@@ -70,6 +70,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="LaunchDarkly.EventSource" Version="5.2.0" />
     <PackageReference Include="LibLog" Version="4.2.6">
       <PrivateAssets>All</PrivateAssets>
     </PackageReference>
@@ -105,7 +106,7 @@
     <Authors>Unleash</Authors>
     <Owner>Bricks Software</Owner>
     <Description>Flexible feature toggle client. It supports enabling features runtime, through multiple activation strategies, and allows you to decouple deployment of code from release of new features. Unleash is a feature toggle system that gives you a great overview over all feature toggles across all your applications and services. Read more at: https://github.com/unleash/unleash/</Description>
-    <RepositoryUrl>https://github.com/Unleash/unleash-client-dotnet</RepositoryUrl>
+    <RepositoryUrl>https://github.com/Unleash/unleash-dotnet-sdk</RepositoryUrl>
     <Version>$(Version)</Version>
     <AssemblyVersion>$(AssemblyVersion)</AssemblyVersion>
     <FileVersion>$(FileVersion)</FileVersion>
@@ -117,7 +118,7 @@
     <Product>Unleash Feature Toggle Client</Product>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <AssemblyName>Unleash.Client</AssemblyName>
-    <PackageProjectUrl>https://github.com/Unleash/unleash-client-dotnet</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/Unleash/unleash-dotnet-sdk</PackageProjectUrl>
     <IncludeSymbols>True</IncludeSymbols>
     <Company>Unleash</Company>
     <PackageReadmeFile>README.md</PackageReadmeFile>

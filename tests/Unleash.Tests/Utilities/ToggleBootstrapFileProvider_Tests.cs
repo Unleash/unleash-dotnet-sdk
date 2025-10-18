@@ -2,6 +2,7 @@
 using NUnit.Framework;
 using System.Text;
 using Unleash.Internal;
+using Unleash.Tests.Mock;
 using Unleash.Utilities;
 
 namespace Unleash.Tests.Utilities
@@ -18,9 +19,8 @@ namespace Unleash.Tests.Utilities
         public void Returns_String_Empty_When_File_Does_Not_Exist()
         {
             // Arrange
-            var fileSystem = new FileSystem(Encoding.UTF8);
-            string toggleFileName = AppDataFile("unleash-repo-v1-missing.json");
-            var toggleFileProvider = new ToggleBootstrapFileProvider(toggleFileName, new UnleashSettings() { FileSystem = fileSystem });
+            string toggleFileName = "unleash-repo-v1-missing.json";
+            var toggleFileProvider = new ToggleBootstrapFileProvider(toggleFileName, new UnleashSettings() { FileSystem = new MockFileSystem() });
 
             // Act
             var emptyResult = toggleFileProvider.Read();
@@ -33,10 +33,12 @@ namespace Unleash.Tests.Utilities
         public void Returns_File_Content_When_File_Exists()
         {
             // Arrange
-            var fileSystem = new FileSystem(Encoding.UTF8);
-            string toggleFileName = AppDataFile("unleash-repo-v1.json");
+            var fileSystem = new MockFileSystem();
+            string toggleFileName = "unleash-repo-v1.json";
+            string fileContent = "{ \"toggles\": [] }";
+
+            fileSystem.WriteAllText(toggleFileName, fileContent);
             var toggleFileProvider = new ToggleBootstrapFileProvider(toggleFileName, new UnleashSettings() { FileSystem = fileSystem });
-            var fileContent = fileSystem.ReadAllText(toggleFileName);
 
             // Act
             var result = toggleFileProvider.Read();
@@ -50,12 +52,13 @@ namespace Unleash.Tests.Utilities
         {
             // Arrange
             var settings = new UnleashSettings();
-            var toggleFileName = AppDataFile("unleash-repo-v1.json");
-            settings.UseBootstrapFileProvider(toggleFileName);
-            var fileSystem = new FileSystem(Encoding.UTF8);
-            settings.FileSystem = fileSystem;
+            var toggleFileName = "unleash-repo-v1.json";
+            var fileContent = "{ \"toggles\": [] }";
+            var fileSystem = new MockFileSystem();
+            fileSystem.WriteAllText(toggleFileName, fileContent);
 
-            var fileContent = fileSystem.ReadAllText(toggleFileName);
+            settings.UseBootstrapFileProvider(toggleFileName);
+            settings.FileSystem = fileSystem;
 
             // Act
             var result = settings.ToggleBootstrapProvider.Read();

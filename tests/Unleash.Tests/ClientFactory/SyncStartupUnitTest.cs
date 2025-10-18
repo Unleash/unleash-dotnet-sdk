@@ -65,17 +65,6 @@ namespace Unleash.Tests.ClientFactory
             Assert.ThrowsAsync<Exception>(async () => await unleashFactory.CreateClientAsync(settings, synchronousInitialization: true));
         }
 
-        [Test(Description = "Delayed initialization: Should only fetch toggles once")]
-        public async Task DelayedInitializationFetchCount()
-        {
-            settings.UnleashApiClient = mockApiClient;
-
-            var unleash = await unleashFactory.CreateClientAsync(settings);
-
-            A.CallTo(() => mockApiClient.FetchToggles(string.Empty, A<CancellationToken>.Ignored, false))
-                .MustHaveHappenedOnceExactly();
-        }
-
         [Test(Description = "Delayed initialization: Should be ready after creation")]
         public void DelayedInitializationNotReadyAfterConstruction()
         {
@@ -187,6 +176,30 @@ namespace Unleash.Tests.ClientFactory
                     }
                 });
             });
+        }
+
+        [Test]
+        public void Failing_Synchronous_Initialization_Can_Still_Create_New_Instance()
+        {
+            var settings = new UnleashSettings
+            {
+                AppName = "test-app-name",
+                UnleashApi = new Uri("http://localhost:33/does/not/exist/api"),
+                CustomHttpHeaders = new Dictionary<string, string>()
+                {
+                    { "Authorization", "Token" },
+                }
+            };
+
+            var factory = new UnleashClientFactory();
+            Assert.ThrowsAsync<UnleashException>(async () =>
+            {
+                var failingUnleashInit = await factory.CreateClientAsync(settings, synchronousInitialization: true);
+            });
+
+            var unleash = new DefaultUnleash(settings);
+            Assert.IsNotNull(unleash);
+            Assert.True(unleash.IsEnabled("some-toggle", true));
         }
 
         private IUnleash GetUnleash(HttpResponseMessage response)

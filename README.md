@@ -3,7 +3,6 @@
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-v1.4%20adopted-ff69b4.svg)](code-of-conduct.md)
 [![NuGet](https://img.shields.io/nuget/v/Unleash.Client.svg)](https://www.nuget.org/packages/Unleash.Client/)
 
-
 >  **Migrating to v5**
 >
 > If you use [bootstrapping](#bootstrapping), [custom strategies](#custom-strategies), or a custom JSON serializer, read the complete [migration guide](./v5_MIGRATION_GUIDE.md) before upgrading to v5.
@@ -11,15 +10,15 @@
 
 ## Introduction
 
-Unleash Client SDK for .Net. It is compatible with the
-[Unleash-hosted.com SaaS offering](https://www.unleash-hosted.com/) and
-[Unleash Open-Source](https://github.com/unleash/unleash).
+Unleash is a private, secure, and scalable [feature management platform](https://www.getunleash.io/) built to reduce the risk of releasing new features and accelerate software development. This .Net SDK is designed to help you integrate with Unleash and evaluate feature flags inside your application.
 
-The main motivation for doing feature toggling is to decouple the process for deploying code to production and releasing new features. This helps reducing risk, and allow us to easily manage which features to enable.
+You can use this client with [Unleash Enterprise](https://www.getunleash.io/pricing?utm_source=readme&utm_medium=dotnet) or [Unleash Open Source](https://github.com/Unleash/unleash).
+
+The main motivation behind feature toggles is to decouple the process for deploying code to production and releasing new features. This helps reducing risk, and allow us to easily manage which features to enable.
 
 Feature toggles decouple deployment of code from release of new features.
 
-Take a look at the demonstration site at [unleash.herokuapp.com](http://unleash.herokuapp.com/)
+Take a look at the demonstration site at [Unleash demo](https://app.unleash-hosted.com/demo)
 
 Read more of the main project at [github.com/unleash/unleash](https://github.com/Unleash/unleash)
 
@@ -130,7 +129,7 @@ If you're organizing your feature toggles in projects in Unleash Enterprise, you
 var settings = new UnleashSettings()
 {
     AppName = "dotnet-test",
-    UnleashApi = new Uri("http://unleash.herokuapp.com/api/"),
+    UnleashApi = new Uri("https://eu.app.unleash-hosted.com/demo/api/"),
     CustomHttpHeaders = new Dictionary<string, string>()
     {
        {"Authorization","<your-project-scoped-api-token>" }
@@ -281,7 +280,7 @@ protected void Application_BeginRequest(object sender, EventArgs e)
 var settings = new UnleashSettings()
 {
     AppName = "dotnet-test",
-    UnleashApi = new Uri("http://unleash.herokuapp.com/api/"),
+    UnleashApi = new Uri("https://eu.app.unleash-hosted.com/demo/api/"),
     UnleashContextProvider = new AspNetContextProvider(),
     CustomHttpHeaders = new Dictionary<string, string>()
     {
@@ -298,7 +297,7 @@ If you want the client to send custom HTTP Headers with all requests to the Unle
 var settings = new UnleashSettings()
 {
     AppName = "dotnet-test",
-    UnleashApi = new Uri("http://unleash.herokuapp.com/api/"),
+    UnleashApi = new Uri("https://eu.app.unleash-hosted.com/demo/api/"),
     UnleashContextProvider = new AspNetContextProvider(),
     CustomHttpHeaders = new Dictionary<string, string>()
     {
@@ -355,7 +354,7 @@ unleashSettings.AppName = "dotnet-test"
 unleashSettings.InstanceTag = "instance z"
 ' add the custom http header provider to the settings
 unleashSettings.UnleashCustomHttpHeaderProvider = New CustomHttpHeaderProvider()
-unleashSettings.UnleashApi = new Uri("http://unleash.herokuapp.com/api/")
+unleashSettings.UnleashApi = new Uri("https://eu.app.unleash-hosted.com/demo/api/")
 unleashSettings.UnleashContextProvider = New AspNetContextProvider()
 Dim unleash = New DefaultUnleash(unleashSettings)
 
@@ -436,7 +435,7 @@ You can configure InstanceTag like this:
 var settings = new UnleashSettings()
 {
     AppName = "dotnet-test",
-    UnleashApi = new Uri("http://unleash.herokuapp.com/api/"),
+    UnleashApi = new Uri("https://eu.app.unleash-hosted.com/demo/api/"),
     // Set an instance tag for consistent backup file naming
     InstanceTag = "CustomInstanceTag",
     UnleashContextProvider = new AspNetContextProvider(),
@@ -460,7 +459,7 @@ Configuring with the UnleashSettings:
 var settings = new UnleashSettings()
 {
     AppName = "dotnet-test",
-    UnleashApi = new Uri("http://unleash.herokuapp.com/api/"),
+    UnleashApi = new Uri("https://eu.app.unleash-hosted.com/demo/api/"),
     CustomHttpHeaders = new Dictionary<string, string>()
     {
       {"Authorization","API token" }
@@ -500,7 +499,20 @@ settings.UseBootstrapUrlProvider("://domain.top/path/to/file.json", shouldThrowO
 ## Run unleash server with Docker locally
 The Unleash team have made a separate project which runs unleash server inside docker. Please see [unleash-docker](https://github.com/Unleash/unleash-docker) for more details.
 
-## Development
+## Unit Testing
+You may want to mock the `IUnleash` interface in your unit tests. The SDK comes with a `FakeUnleash` implementation that you can use for this purpose.
+
+Example usage:
+
+```csharp
+var fakeUnleash = new FakeUnleash(); // Toggles and variants will be disabled by default
+fakeUnleash.EnableAllToggles(); // All toggles will be enabled
+fakeUnleash.DisableAllToggles(); // All toggles will be disabled
+fakeUnleash.SetToggle("MyFeature", true); // Set a specific toggle to enabled
+fakeUnleash.SetVariant("MyVariantFeature", new Variant("MyVariantFeature", new Payload("string", "valueA"), true, true)); // Set a specific variant
+```
+
+## SDK Development
 
 ### Setup/Tool suggestions/Requirements
 Visual Studio Community / VS Code / JetBrains Rider

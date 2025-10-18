@@ -9,20 +9,26 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using LaunchDarkly.EventSource;
 using Unleash.Events;
 using Unleash.Internal;
 using Unleash.Logging;
 using Unleash.Metrics;
+using Unleash.Streaming;
 
 namespace Unleash.Communication
 {
     internal class UnleashApiClient : IUnleashApiClient
     {
+
         private static readonly ILog Logger = LogProvider.GetLogger(typeof(UnleashApiClient));
 
         private readonly HttpClient httpClient;
         private readonly UnleashApiClientRequestHeaders clientRequestHeaders;
         private readonly EventCallbackConfig eventConfig;
+        private EventSource EventSource { get; set; }
+        private StreamingFeatureFetcher StreamingEventHandler { get; set; }
+
         private readonly JsonSerializerOptions options = new JsonSerializerOptions
         {
             IncludeFields = true,
@@ -154,7 +160,7 @@ namespace Unleash.Communication
         {
             featureRequestsToSkip = Math.Max(0, featureRequestsToSkip - 1);
 
-            var newEtag = response.Headers.ETag?.Tag;
+            var newEtag = response.Headers.ETag?.ToString();
             if (newEtag == etag || response.StatusCode == HttpStatusCode.NotModified)
             {
                 return new FetchTogglesResult
@@ -248,6 +254,41 @@ namespace Unleash.Communication
             }
         }
 
+        public async Task StartStreamingAsync(
+            Uri apiUri,
+            StreamingFeatureFetcher streamingEventHandler
+        )
+        {
+            const string requestUri = "client/streaming";
+            StreamingEventHandler = streamingEventHandler;
+            EventSource = new EventSource(
+                Configuration.Builder(new Uri(apiUri, requestUri))
+                .HttpRequestModifier((requestMessage) =>
+                {
+                    SetRequestHeaders(requestMessage, clientRequestHeaders);
+                })
+                .HttpClient(httpClient)
+                .ReadTimeout(TimeSpan.FromSeconds(60))
+                .ResponseStartTimeout(TimeSpan.FromSeconds(10))
+                .Method(HttpMethod.Get)
+                .Build()
+            );
+            EventSource.MessageReceived += streamingEventHandler.HandleMessage;
+            EventSource.Error += streamingEventHandler.HandleError;
+            await EventSource.StartAsync().ConfigureAwait(false);
+        }
+
+        public void StopStreaming()
+        {
+            if (EventSource == null)
+                return;
+
+            EventSource.MessageReceived -= StreamingEventHandler.HandleMessage;
+            EventSource.Error -= StreamingEventHandler.HandleError;
+            EventSource.Close();
+            EventSource = null;
+        }
+
         private async Task HandleMetricsErrorResponse(HttpResponseMessage response, string requestUri)
         {
             if (backoffResponses.Contains((int)response.StatusCode))
@@ -280,7 +321,6 @@ namespace Unleash.Communication
             const string identifySdkHeader = "unleash-sdk";
 
             const string supportedSpecVersionHeader = "Unleash-Client-Spec";
-
             requestMessage.Headers.TryAddWithoutValidation(userAgentHeader, headers.AppName);
             requestMessage.Headers.TryAddWithoutValidation(instanceIdHeader, headers.InstanceTag);
             requestMessage.Headers.TryAddWithoutValidation(supportedSpecVersionHeader, headers.SupportedSpecVersion);

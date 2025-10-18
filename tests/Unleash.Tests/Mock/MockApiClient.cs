@@ -1,5 +1,6 @@
 ﻿using Unleash.Communication;
 using Unleash.Metrics;
+using Unleash.Streaming;
 using Yggdrasil;
 
 namespace Unleash.Tests.Mock
@@ -83,6 +84,16 @@ namespace Unleash.Tests.Mock
         public Task<bool> SendMetrics(MetricsBucket metricsBucket, CancellationToken cancellationToken)
         {
             return Task.FromResult(true);
+        }
+
+        public Task StartStreamingAsync(Uri apiUri, StreamingFeatureFetcher streamingEventHandler)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void StopStreaming()
+        {
+            throw new NotImplementedException();
         }
     }
 }

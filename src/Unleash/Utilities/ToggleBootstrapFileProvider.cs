@@ -1,4 +1,5 @@
-﻿using Unleash.Internal;
+﻿using System.IO;
+using Unleash.Internal;
 
 namespace Unleash.Utilities
 {
@@ -15,7 +16,14 @@ namespace Unleash.Utilities
 
         public string Read()
         {
-            return settings.FileSystem.ReadAllText(filePath);
+            try
+            {
+                return settings.FileSystem.ReadAllText(filePath);
+            }
+            catch (FileNotFoundException)
+            {
+                return string.Empty;
+            }
         }
     }
 }

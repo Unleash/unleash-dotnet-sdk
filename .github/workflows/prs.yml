@@ -19,7 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-dotnet@v3
+      - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '6.0.x'
 
@@ -28,5 +28,9 @@ jobs:
         env:
           PATH: ${{ github.env.PATH }}:/home/runner/.dotnet/tools
 
+      - name: Build test project
+        run: dotnet build tests/Unleash.Tests/Unleash.Tests.csproj --no-restore --configuration Release
+
       - name: Run tests
-        run: dotnet test tests/Unleash.Tests/Unleash.Tests.csproj --no-restore --verbosity normal
+        run: dotnet test tests/Unleash.Tests/Unleash.Tests.csproj --no-build --configuration Release --verbosity minimal
+

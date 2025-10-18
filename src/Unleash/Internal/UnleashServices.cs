@@ -2,12 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Unleash.Communication;
 using Unleash.Events;
 using Unleash.Internal;
 using Unleash.Logging;
 using Unleash.Scheduling;
 using Unleash.Strategies;
+using Unleash.Streaming;
 using Yggdrasil;
 
 namespace Unleash
@@ -26,6 +28,8 @@ namespace Unleash
         internal bool IsMetricsDisabled { get; }
         internal FetchFeatureTogglesTask FetchFeatureTogglesTask { get; }
         internal YggdrasilEngine engine { get; }
+        internal StreamingFeatureFetcher StreamingFeatureFetcher { get; }
+
         private static readonly IList<string> DefaultStrategyNames = new List<string> {
             "applicationHostname",
             "default",
@@ -48,21 +52,18 @@ namespace Unleash
 
             engine = new YggdrasilEngine(yggdrasilStrategies);
 
-            var backupFile = settings.GetFeatureToggleFilePath();
-            var etagBackupFile = settings.GetFeatureToggleETagFilePath();
-
             // Cancellation
             CancellationToken = cancellationTokenSource.Token;
             ContextProvider = settings.UnleashContextProvider;
 
-            var loader = new CachedFilesLoader(settings.FileSystem, settings.ToggleBootstrapProvider, eventConfig, backupFile, etagBackupFile, settings.BootstrapOverride);
-            var cachedFilesResult = loader.EnsureExistsAndLoad();
+            var backupManager = new CachedFilesLoader(settings, eventConfig);
+            var backupResult = backupManager.Load();
 
-            if (!string.IsNullOrEmpty(cachedFilesResult.InitialState))
+            if (!string.IsNullOrEmpty(backupResult.InitialState))
             {
                 try
                 {
-                    engine.TakeState(cachedFilesResult.InitialState);
+                    engine.TakeState(backupResult.InitialState);
                 }
                 catch (Exception ex)
                 {
@@ -98,28 +99,42 @@ namespace Unleash
                 apiClient = settings.UnleashApiClient;
             }
 
-            scheduledTaskManager = settings.ScheduledTaskManager;
+            scheduledTaskManager = settings.ScheduledTaskManager ?? new SystemTimerScheduledTaskManager();
 
             IsMetricsDisabled = settings.SendMetricsInterval == null;
 
-            var fetchFeatureTogglesTask = new FetchFeatureTogglesTask(
-                engine,
-                apiClient,
-                settings.FileSystem,
-                eventConfig,
-                backupFile,
-                etagBackupFile,
-                settings.ThrowOnInitialFetchFail)
-            {
-                ExecuteDuringStartup = settings.ScheduleFeatureToggleFetchImmediatly,
-                Interval = settings.FetchTogglesInterval,
-                Etag = cachedFilesResult.InitialETag
-            };
-            FetchFeatureTogglesTask = fetchFeatureTogglesTask;
+            var scheduledTasks = new List<IUnleashScheduledTask>(3);
 
-            var scheduledTasks = new List<IUnleashScheduledTask>(){
-                fetchFeatureTogglesTask
-            };
+            if (!settings.ExperimentalUseStreaming)
+            {
+                var fetchFeatureTogglesTask = new FetchFeatureTogglesTask(
+                    engine,
+                    apiClient,
+                    settings.FileSystem,
+                    eventConfig,
+                    backupManager,
+                    settings.ThrowOnInitialFetchFail)
+                {
+                    ExecuteDuringStartup = settings.ScheduleFeatureToggleFetchImmediatly,
+                    Interval = settings.FetchTogglesInterval,
+                    Etag = backupResult.InitialETag
+                };
+                FetchFeatureTogglesTask = fetchFeatureTogglesTask;
+
+                scheduledTasks.Add(fetchFeatureTogglesTask);
+            }
+            else
+            {
+                StreamingFeatureFetcher = new StreamingFeatureFetcher(
+                    settings,
+                    apiClient,
+                    engine,
+                    eventConfig,
+                    backupManager
+                );
+                Task.Run(() => StreamingFeatureFetcher.StartAsync().ConfigureAwait(false));
+            }
+
 
             if (settings.SendMetricsInterval != null)
             {
@@ -159,7 +174,12 @@ namespace Unleash
             }
 
             engine?.Dispose();
+            if (scheduledTaskManager != null && !(scheduledTaskManager is SystemTimerScheduledTaskManager))
+            {
+                Logger.Warn(() => $"UNLEASH: Disposing ScheduledTaskManager of type {scheduledTaskManager.GetType().Name}");
+            }
             scheduledTaskManager?.Dispose();
+            StreamingFeatureFetcher?.Dispose();
         }
     }
 }

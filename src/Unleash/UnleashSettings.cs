@@ -19,9 +19,6 @@ namespace Unleash
     {
         internal readonly Encoding Encoding = Encoding.UTF8;
 
-        internal readonly string FeatureToggleFilename = "unleash.toggles.json";
-        internal readonly string EtagFilename = "unleash.etag.txt";
-
         /// <summary>
         /// Gets the version of unleash client running.
         /// </summary>
@@ -104,9 +101,10 @@ namespace Unleash
 
         /// <summary>
         /// Gets or sets the scheduled task manager used for syncing feature toggles and metrics with the backend in the background.
-        /// Default: An implementation based on System.Threading.Timers
+        /// If not set will provide an internal implementation based on System.Threading.Timers
         /// </summary>
-        public IUnleashScheduledTaskManager ScheduledTaskManager { get; set; } = new SystemTimerScheduledTaskManager();
+        [Obsolete("Will be removed in an upcoming major version", false)]
+        public IUnleashScheduledTaskManager ScheduledTaskManager { get; set; }
 
 
         /// <summary>
@@ -130,6 +128,11 @@ namespace Unleash
         public bool BootstrapOverride { get; set; } = true;
 
         /// <summary>
+        /// EXPERIMENTAL: Gets or sets if streaming should be used
+        /// </summary>
+        public bool ExperimentalUseStreaming { get; set; }
+
+        /// <summary>
         /// INTERNAL: Gets or sets if the feature toggle fetch should be immeditely scheduled. Used by the client factory to prevent redundant initial fetches.
         /// </summary>
         internal bool ScheduleFeatureToggleFetchImmediatly { get; set; } = true;
@@ -146,7 +149,7 @@ namespace Unleash
             var assemblyName = Assembly.GetExecutingAssembly().GetName();
             var version = assemblyName.Version.ToString(3);
 
-            return $"unleash-client-dotnet:{version}";
+            return $"unleash-dotnet-sdk:{version}";
         }
 
         private static string GetDefaultInstanceTag()
@@ -175,9 +178,6 @@ namespace Unleash
             sb.AppendLine($"Send metrics interval: {metricsInterval}");
 
             sb.AppendLine($"Local storage folder: {LocalStorageFolder()}");
-            sb.AppendLine($"Backup file: {FeatureToggleFilename}");
-            sb.AppendLine($"Etag file: {EtagFilename}");
-
             sb.AppendLine($"HttpClient Factory: {HttpClientFactory.GetType().Name}");
             sb.AppendLine($"Context provider: {UnleashContextProvider.GetType().Name}");
 
@@ -185,30 +185,6 @@ namespace Unleash
             sb.AppendLine($"Bootstrap provider: {ToggleBootstrapProvider?.GetType().Name ?? "null"}");
 
             return sb.ToString();
-        }
-
-        public string GetFeatureToggleFilePath()
-        {
-            var tempFolder = LocalStorageFolder();
-            return Path.Combine(tempFolder, PrependFileName(FeatureToggleFilename));
-        }
-
-        public string GetFeatureToggleETagFilePath()
-        {
-            var tempFolder = LocalStorageFolder();
-            return Path.Combine(tempFolder, PrependFileName(EtagFilename));
-        }
-
-        private string PrependFileName(string filename)
-        {
-            var invalidFileNameChars = Path.GetInvalidFileNameChars();
-
-            var extension = Path.GetExtension(filename);
-            var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(filename);
-
-            return new string($"{fileNameWithoutExtension}-{AppName}-{InstanceTag}-{SdkVersion}{extension}"
-                .Where(c => !invalidFileNameChars.Contains(c))
-                .ToArray());
         }
 
         public void UseBootstrapUrlProvider(string path, bool shouldThrowOnError, Dictionary<string, string> customHeaders = null)

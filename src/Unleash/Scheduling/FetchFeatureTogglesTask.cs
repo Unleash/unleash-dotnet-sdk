@@ -14,8 +14,7 @@ namespace Unleash.Scheduling
     internal class FetchFeatureTogglesTask : IUnleashScheduledTask
     {
         private static readonly ILog Logger = LogProvider.GetLogger(typeof(FetchFeatureTogglesTask));
-        private readonly string toggleFile;
-        private readonly string etagFile;
+        private readonly IBackupManager backupManager;
         private readonly IFileSystem fileSystem;
         private readonly EventCallbackConfig eventConfig;
         private readonly IUnleashApiClient apiClient;
@@ -31,16 +30,14 @@ namespace Unleash.Scheduling
             IUnleashApiClient apiClient,
             IFileSystem fileSystem,
             EventCallbackConfig eventConfig,
-            string toggleFile,
-            string etagFile,
+            IBackupManager backupManager,
             bool throwOnInitialLoadFail)
         {
             this.engine = engine;
             this.apiClient = apiClient;
             this.fileSystem = fileSystem;
             this.eventConfig = eventConfig;
-            this.toggleFile = toggleFile;
-            this.etagFile = etagFile;
+            this.backupManager = backupManager;
             this.throwOnInitialLoadFail = throwOnInitialLoadFail;
         }
 
@@ -88,27 +85,7 @@ namespace Unleash.Scheduling
             // now that the toggle collection has been updated, raise the toggles updated event if configured
             eventConfig?.RaiseTogglesUpdated(new TogglesUpdatedEvent { UpdatedOn = DateTime.UtcNow });
 
-            try
-            {
-                fileSystem.WriteAllText(toggleFile, result.State);
-            }
-            catch (IOException ex)
-            {
-                Logger.Warn(() => $"UNLEASH: Exception when writing to toggle file '{toggleFile}'.", ex);
-                eventConfig?.RaiseError(new ErrorEvent() { ErrorType = ErrorType.TogglesBackup, Error = ex });
-            }
-
-            Etag = result.Etag;
-
-            try
-            {
-                fileSystem.WriteAllText(etagFile, Etag);
-            }
-            catch (IOException ex)
-            {
-                Logger.Warn(() => $"UNLEASH: Exception when writing to ETag file '{etagFile}'.", ex);
-                eventConfig?.RaiseError(new ErrorEvent() { ErrorType = ErrorType.TogglesBackup, Error = ex });
-            }
+            backupManager.Save(new Backup(result.State, result.Etag));
         }
 
         public string Name => "fetch-feature-toggles-task";

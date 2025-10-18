@@ -22,7 +22,7 @@ namespace Unleash.Tests
             var settings = new UnleashSettings();
 
             // Assert
-            settings.SdkVersion.Should().StartWith("unleash-client-dotnet:");
+            settings.SdkVersion.Should().StartWith("unleash-dotnet-sdk:");
             settings.SdkVersion.Should().MatchRegex(@":\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$");
         }
     }
