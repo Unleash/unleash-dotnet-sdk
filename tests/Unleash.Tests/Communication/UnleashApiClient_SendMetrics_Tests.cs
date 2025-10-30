@@ -17,8 +17,8 @@ namespace Unleash.Tests.Communication
             mockHttp.When($"{BASE_URL}/metrics")
                 .WithPartialContent("appName")
                 .WithPartialContent("instanceId")
-                .WithPartialContent("\"no\":0")
-                .WithPartialContent("\"yes\":1")
+                .WithPartialContent("\"no\":1")
+                .WithPartialContent("\"yes\":0")
                 .WithPartialContent("specVersion")
                 .WithPartialContent("platformName")
                 .WithPartialContent("platformVersion")
@@ -26,7 +26,7 @@ namespace Unleash.Tests.Communication
                 .Respond("application/json", "{ 'status': 'ok' }");
 
             var engine = new YggdrasilEngine();
-            engine.CountFeature("someTestToggle", true);
+            engine.IsEnabled("someTestToggle", new Context());
 
             var result = await client.SendMetrics(engine.GetMetrics(), CancellationToken.None);
             Assert.IsTrue(result);
