@@ -74,9 +74,9 @@ namespace Unleash
         {
             var enhancedContext = context.ApplyStaticFields(settings);
             var response = services.engine.IsEnabled(toggleName, enhancedContext);
-            var enabled = response.Enabled;
+            var enabled = response.HasEnabled ? response.Enabled : defaultSetting;
 
-            if (response.ImpressionData)
+            if (response.HasEnabled && response.ImpressionData)
             {
                 EmitImpressionEvent("isEnabled", enhancedContext, enabled, toggleName);
             }
