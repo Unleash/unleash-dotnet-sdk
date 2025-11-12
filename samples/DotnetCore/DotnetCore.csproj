@@ -8,10 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Unleash\Unleash.csproj">
-      <Project>{4cf2127b-8fc8-46fc-8614-3918148463a5}</Project>
-      <Name>Unleash</Name>
-    </ProjectReference>
+    <PackageReference Include="Unleash.Client" Version="5.5.3" />
   </ItemGroup>
 
 </Project>
