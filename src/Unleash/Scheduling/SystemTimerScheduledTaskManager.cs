@@ -57,9 +57,9 @@ namespace Unleash.Scheduling
                     if (cancellationToken.IsCancellationRequested)
                     {
                         // Stop the timer.
-                        if (timers.ContainsKey(name))
+                        if (timers.TryGetValue(name, out var timerToStop))
                         {
-                            timers[name].SafeTimerChange(Timeout.Infinite, Timeout.Infinite, ref _disposed);
+                            timerToStop.SafeTimerChange(Timeout.Infinite, Timeout.Infinite, ref _disposed);
                         }
                     }
                 }
@@ -123,3 +123,4 @@ namespace Unleash.Scheduling
         }
     }
 }
+
