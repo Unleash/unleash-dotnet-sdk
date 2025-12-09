@@ -90,7 +90,7 @@ namespace Unleash.Tests.Internal
             var callbackConfig = new EventCallbackConfig
             {
                 // when toggles updated event is raised (after the fetch), check toggle collection to see if toggle is enabled
-                TogglesUpdatedEvent = evt => { toggleIsEnabledResultAfterEvent = engine.IsEnabled("toggle-1", new UnleashContext()) ?? false; }
+                TogglesUpdatedEvent = evt => { toggleIsEnabledResultAfterEvent = engine.IsEnabled("toggle-1", new UnleashContext()).Enabled; }
             };
 
             var fakeApiClient = A.Fake<IUnleashApiClient>();
@@ -106,7 +106,7 @@ namespace Unleash.Tests.Internal
             Task.WaitAll(task.ExecuteAsync(tokenSource.Token));
 
             // Assert
-            engine.IsEnabled("toggle-1", new UnleashContext()).Should().BeTrue(); // verify that toggle is enabled after fetch
+            engine.IsEnabled("toggle-1", new UnleashContext()).Enabled.Should().BeTrue(); // verify that toggle is enabled after fetch
             toggleIsEnabledResultAfterEvent.Should().BeTrue(); // verify that toggles updated event handler got the correct result for the updated toggle state (should now be enabled)
         }
     }

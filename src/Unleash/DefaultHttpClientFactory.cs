@@ -49,10 +49,13 @@ namespace Unleash
 
         protected virtual HttpClient CreateHttpClientInstance(Uri unleashApiUri)
         {
-            var client = new HttpClient
+            var client = new HttpClient(new HttpClientHandler
+            {
+                AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate
+            })
             {
                 BaseAddress = unleashApiUri,
-                Timeout = Timeout
+                Timeout = Timeout,
             };
 
             return client;

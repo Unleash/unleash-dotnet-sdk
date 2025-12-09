@@ -86,6 +86,7 @@ namespace Unleash.Scheduling
             eventConfig?.RaiseTogglesUpdated(new TogglesUpdatedEvent { UpdatedOn = DateTime.UtcNow });
 
             backupManager.Save(new Backup(result.State, result.Etag));
+            Etag = result.Etag;
         }
 
         public string Name => "fetch-feature-toggles-task";

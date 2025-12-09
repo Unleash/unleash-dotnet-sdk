@@ -1,43 +1,66 @@
-﻿using Unleash;
+﻿using System.Diagnostics;
+using System.Security.Cryptography;
+using Unleash;
 using Unleash.ClientFactory;
-using Unleash.Strategies;
+using System;
+using System.Threading;
 
-var settings = new UnleashSettings()
+class Program
 {
-    AppName = "dotnet-test",
-    UnleashApi = new Uri("http://localhost:4242/api"), //setup for running against a local unleash instance, feel free to change this
-    CustomHttpHeaders = new Dictionary<string, string>()
+    private static readonly ManualResetEvent QuitEvent = new ManualResetEvent(false);
+
+    static async Task Main(string[] args)
     {
-      {"Authorization","add a valid client token here" }
-    },
-    SendMetricsInterval = TimeSpan.FromSeconds(1)
-};
+        Console.CancelKeyPress += (sender, e) =>
+        {
+            Console.WriteLine("Ctrl+C pressed. Shutting down...");
+            e.Cancel = true; // Prevent immediate process kill
+            QuitEvent.Set();
+        };
 
-const string TOGGLE_NAME = "test";
+        AppDomain.CurrentDomain.ProcessExit += (sender, e) =>
+        {
+            Console.WriteLine("Process exiting...");
+            QuitEvent.Set();
+        };
 
-Console.WriteLine("Starting Unleash SDK");
+        var unleashApi = Environment.GetEnvironmentVariable("UNLEASH_API");
+        var unleashApiKey = Environment.GetEnvironmentVariable("UNLEASH_API_KEY");
+        int.TryParse(Environment.GetEnvironmentVariable("UNLEASH_ENABLED_INTERVAL") ?? "200", out var enabledInterval);
+        enabledInterval = enabledInterval > 10 ? enabledInterval : 10;
+        var factory = new UnleashClientFactory();
+        var unleash = await factory.CreateClientAsync(new UnleashSettings
+        {
+            AppName = "dotnet-app",
+            UnleashApi = new Uri(unleashApi),
+            CustomHttpHeaders = new Dictionary<string, string>
+            {
+                { "Authorization", unleashApiKey }
+            },
+        });
 
-var unleashFactory = new UnleashClientFactory();
-IUnleash unleash = await unleashFactory.CreateClientAsync(settings, synchronousInitialization: true, new MyCustomStrategy());
+        unleash.ConfigureEvents((cfg) =>
+        {
+            cfg.ErrorEvent += (evt) => { Console.WriteLine($"Unleash Error: {evt}"); };
+        });
 
+        System.Timers.Timer t = new System.Timers.Timer(200);
+        t.Elapsed += (s, e) =>
+        {
+            var watch = Stopwatch.StartNew();
+            var flags = unleash.ListKnownToggles();
+            var elementAt = RandomNumberGenerator.GetInt32(flags.Count);
+            var variantFlag = flags.ElementAt(elementAt);
+            foreach (var flag in flags)
+            {
+                var enabled = unleash.IsEnabled(flag.Name);
+            }
+            var variant = unleash.GetVariant(variantFlag.Name);
+            watch.Stop();
+            var elapsed = watch.ElapsedTicks;
+        };
+        t.Start();
 
-while (true)
-{
-    var enabled = unleash.IsEnabled(TOGGLE_NAME);
-    var variant = unleash.GetVariant(TOGGLE_NAME);
-
-    Console.WriteLine($"Toggle enabled: {enabled}, variant: {System.Text.Json.JsonSerializer.Serialize(variant)}");
-    await Task.Delay(1000);
-}
-
-// If you want to test this, you'll need to setup a custom strategy in your
-// Unleash UI and add it to the 'test' toggle.
-class MyCustomStrategy : IStrategy
-{
-    public string Name => "my-custom-strategy";
-
-    public bool IsEnabled(Dictionary<string, string> parameters, UnleashContext context)
-    {
-        return true;
+        QuitEvent.WaitOne();
     }
 }
