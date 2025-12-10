@@ -23,16 +23,10 @@ Take a look at the demonstration site at [Unleash demo](https://app.unleash-host
 Read more of the main project at [github.com/unleash/unleash](https://github.com/Unleash/unleash)
 
 ## Features
-Supported Frameworks
-* .Net 6
+Supported Frameworks (through binaries for net6.0 and netstandard2.0)
+* .Net 6 and above
 * NET Standard 2.0
-* .Net 4.8
-* .Net 4.7.2
-* .Net 4.7
-* .Net 4.6.1
-* .Net 4.6
-* .Net 4.5.1
-* .Net 4.5
+* .Net 4.7 and above
 
 Extendable architecture
 - Inject your own implementations of key components (background task scheduler, http client factory)
