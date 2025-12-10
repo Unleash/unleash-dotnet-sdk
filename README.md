@@ -26,7 +26,7 @@ Read more of the main project at [github.com/unleash/unleash](https://github.com
 Supported Frameworks (through binaries for net6.0 and netstandard2.0)
 * .Net 6 and above
 * NET Standard 2.0
-* .Net 4.7 and above
+* .Net Framework 4.7 and above
 
 Extendable architecture
 - Inject your own implementations of key components (background task scheduler, http client factory)
