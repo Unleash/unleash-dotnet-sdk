@@ -166,7 +166,6 @@ public class StreamingFeatureFetcherTests
             if (!firstSent)
             {
                 firstSent = true;
-                Console.WriteLine($"Sending 1");
                 await WriteEvents(context, new List<ServerSentEvent>()
                 {
                     new ServerSentEvent { Id = "1", Payload = payload, Name = "unleash-connected" },
@@ -174,7 +173,6 @@ public class StreamingFeatureFetcherTests
             }
             else
             {
-                Console.WriteLine($"Sending 2");
                 await WriteEvents(context, new List<ServerSentEvent>()
                 {
                     new ServerSentEvent { Id = "2", Payload = updatedPayload, Name = "unleash-updated" }
