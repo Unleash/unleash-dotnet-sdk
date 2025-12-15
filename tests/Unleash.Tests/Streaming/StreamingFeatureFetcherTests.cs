@@ -272,7 +272,7 @@ public class StreamingFeatureFetcherTests
                 new ServerSentEvent { Id = "1", Payload = payload, Name = "unleash-connected" },
             });
         });
-   
+
         var clientFactory = new TestHttpClientFactory(client);
 
         var uri = new Uri("http://example.com");
