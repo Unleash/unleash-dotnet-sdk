@@ -11,6 +11,7 @@ using System.IO;
 namespace Unleash.Streaming
 {
     /// <summary>
+    /// Connects to and consumes messages from streaming endpoint
     /// </summary>
     internal class StreamingFeatureFetcher
     {
@@ -31,6 +32,19 @@ namespace Unleash.Streaming
         private IFileSystem FileSystem { get; }
         private UnleashSettings Settings { get; set; }
         private IUnleashApiClient ApiClient { get; set; }
+
+        private async Task Reconnect()
+        {
+            try
+            {
+                ApiClient.StopStreaming();
+                await StartAsync();
+            }
+            catch (Exception ex)
+            {
+                EventConfig?.RaiseError(new ErrorEvent() { ErrorType = ErrorType.Client, Error = ex });
+            }
+        }
 
         public async Task StartAsync()
         {
@@ -78,8 +92,9 @@ namespace Unleash.Streaming
             }
             catch (Exception ex)
             {
-                Logger.Error(() => $"UNLEASH: Error processing streaming event, feature flags will likely not evaluate correctly until application restart or stream re-connect", ex);
+                Logger.Warn(() => $"UNLEASH: Error processing streaming event, re-connecting", ex);
                 EventConfig?.RaiseError(new ErrorEvent() { ErrorType = ErrorType.Client, Error = ex });
+                Task.Run(() => this.Reconnect().ConfigureAwait(false));
             }
         }
 

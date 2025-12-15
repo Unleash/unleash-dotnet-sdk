@@ -1,62 +1,13 @@
 using Unleash;
-using Unleash.Streaming;
-using Unleash.Communication;
 using NUnit.Framework;
-using Unleash.Metrics;
-using Yggdrasil;
-using Unleash.Scheduling;
 using LaunchDarkly.EventSource;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using NUnit.Framework.Internal;
-using Microsoft.AspNetCore.TestHost;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Routing;
-using Microsoft.Extensions.DependencyInjection;
 using System.Diagnostics;
 using Unleash.Tests.Mock;
+using static Unleash.Tests.StreamingServer;
 
-internal class MockedTaskManager : Unleash.Scheduling.IUnleashScheduledTaskManager
-{
-    public void Configure(IEnumerable<IUnleashScheduledTask> tasks, CancellationToken cancellationToken)
-    {
-    }
-
-    public void Dispose()
-    {
-        // Mock dispose method
-    }
-}
-
-internal class StubbedApiClient : IUnleashApiClient
-{
-    public StreamingFeatureFetcher StreamingEventHandler { get; private set; }
-
-    public Task<FetchTogglesResult> FetchToggles(string etag, CancellationToken cancellationToken, bool throwOnFail = false)
-    {
-        return Task.FromResult(new FetchTogglesResult());
-    }
-
-    public Task<bool> RegisterClient(ClientRegistration registration, CancellationToken cancellationToken)
-    {
-        return Task.FromResult(true);
-    }
-
-    public Task<bool> SendMetrics(MetricsBucket metrics, CancellationToken cancellationToken)
-    {
-        return Task.FromResult(true);
-    }
-
-    public Task StartStreamingAsync(Uri apiUri, StreamingFeatureFetcher streamingEventHandler)
-    {
-        StreamingEventHandler = streamingEventHandler;
-        return Task.CompletedTask;
-    }
-
-    public void StopStreaming()
-    {
-    }
-}
+namespace Unleash.Tests;
 
 public class StreamingFeatureFetcherTests
 {
@@ -72,7 +23,7 @@ public class StreamingFeatureFetcherTests
             UnleashApi = uri,
             AppName = "TestApp",
             InstanceTag = "TestInstance",
-            ScheduledTaskManager = new MockedTaskManager(),
+            ScheduledTaskManager = new NoOpTaskManager(),
             ExperimentalUseStreaming = true,
         };
         var unleash = new DefaultUnleash(settings);
@@ -92,28 +43,16 @@ public class StreamingFeatureFetcherTests
     {
         // Arrange
         var updated = false;
-        var server = new TestServer(new WebHostBuilder()
-        .ConfigureServices(services =>
+        var updateData = "{\"events\":[{\"type\":\"feature-updated\",\"eventId\":2,\"feature\":{\"name\":\"deltaFeature\",\"enabled\":true,\"strategies\":[],\"variants\":[]}}]}";
+
+        var client = GetStreamingTestServerClient(async context =>
         {
-            services.AddRouting();
-        })
-        .Configure(app =>
-        {
-            app.UseRouter(router =>
+            await WriteEvents(context, new List<ServerSentEvent>()
             {
-                router.MapGet("client/streaming", async context =>
-                {
-                    var updateData = "{\"events\":[{\"type\":\"feature-updated\",\"eventId\":2,\"feature\":{\"name\":\"deltaFeature\",\"enabled\":true,\"strategies\":[],\"variants\":[]}}]}";
-                    context.Response.Headers["Content-Type"] = "text/event-stream";
-                    await context.Response.WriteAsync("event: unleash-updated\n");
-                    await context.Response.WriteAsync($"data: {updateData}\n\n");
-                    await context.Response.Body.FlushAsync();
-
-                });
+                new ServerSentEvent { Id = "2", Payload = updateData, Name = "unleash-updated" }
             });
-        }));
+        });
 
-        var client = server.CreateClient();
         var clientFactory = new TestHttpClientFactory(client);
 
         var uri = new Uri("http://example.com/");
@@ -122,7 +61,7 @@ public class StreamingFeatureFetcherTests
             HttpClientFactory = clientFactory,
             AppName = "TestApp",
             InstanceTag = "TestInstance",
-            ScheduledTaskManager = new MockedTaskManager(),
+            ScheduledTaskManager = new NoOpTaskManager(),
             ExperimentalUseStreaming = true,
             UnleashApi = uri
         };
@@ -147,35 +86,101 @@ public class StreamingFeatureFetcherTests
     }
 
     [Test]
-    public async Task Receives_Successive_Events_From_Sse_Server()
+    public async Task Reconnects_On_Bad_Event()
     {
-        // Arrange
-        var updated = 0;
-        var server = new TestServer(new WebHostBuilder()
-        .ConfigureServices(services =>
+        var requestEventIdHeaders = new List<string>();
+        var firstSent = false;
+
+        var payload = "{\"events\":[{\"type\":\"hydration\",\"eventId\":1,\"features\":[{\"name\":\"deltaFeature\",\"enabled\":false,\"strategies\":[],\"variants\":[]}],\"segments\":[]}]}";
+        var badUpdate = "{\"events\":[{\"type\":\"feature-updated\",\"eventId\":2,\" and then some junk that isn't valid JSON";
+        var updatedPayload = "{\"events\":[{\"type\":\"hydration\",\"eventId\":2,\"features\":[{\"name\":\"deltaFeature\",\"enabled\":true,\"strategies\":[],\"variants\":[]}],\"segments\":[]}]}";
+
+        var client = GetStreamingTestServerClient(async context =>
         {
-            services.AddRouting();
-        })
-        .Configure(app =>
-        {
-            app.UseRouter(router =>
+            var lastEventIdHeader = context.Request.Headers["last-event-id"];
+            requestEventIdHeaders.Add(lastEventIdHeader);
+
+            if (!firstSent)
             {
-                router.MapGet("client/streaming", async context =>
+                firstSent = true;
+                await WriteEvents(context, new List<ServerSentEvent>()
                 {
-                    var payload = "{\"events\":[{\"type\":\"hydration\",\"eventId\":1,\"features\":[{\"name\":\"deltaFeature\",\"enabled\":false,\"strategies\":[],\"variants\":[]}],\"segments\":[]}]}";
-                    var updateData = "{\"events\":[{\"type\":\"feature-updated\",\"eventId\":2,\"feature\":{\"name\":\"deltaFeature\",\"enabled\":true,\"strategies\":[],\"variants\":[]}}]}";
-                    context.Response.Headers["Content-Type"] = "text/event-stream";
-                    await context.Response.WriteAsync("event: unleash-connected\n");
-                    await context.Response.WriteAsync($"data: {payload}\n\n");
-                    await context.Response.Body.FlushAsync();
-                    await context.Response.WriteAsync("event: unleash-updated\n");
-                    await context.Response.WriteAsync($"data: {updateData}\n\n");
-                    await context.Response.Body.FlushAsync();
-
+                    new ServerSentEvent { Id = "1", Payload = payload, Name = "unleash-connected" },
+                    new ServerSentEvent { Id = "2", Payload = badUpdate, Name = "unleash-updated" }
                 });
-            });
-        }));
+            }
+            else
+            {
+                await WriteEvents(context, new List<ServerSentEvent>()
+                {
+                    new ServerSentEvent { Id = "2", Payload = updatedPayload, Name = "unleash-connected" }
+                });
+            }
+        });
 
+        var clientFactory = new TestHttpClientFactory(client);
+
+        var uri = new Uri("http://example.com/");
+        var settings = new UnleashSettings
+        {
+            HttpClientFactory = clientFactory,
+            AppName = "TestApp",
+            InstanceTag = "TestInstance",
+            ScheduledTaskManager = new NoOpTaskManager(),
+            ExperimentalUseStreaming = true,
+            UnleashApi = uri,
+        };
+
+        // Act
+        var unleash = new DefaultUnleash(settings);
+        var timer = Stopwatch.StartNew();
+        while (timer.Elapsed < TimeSpan.FromMilliseconds(500))
+        {
+            await Task.Delay(TimeSpan.FromMilliseconds(2));
+        }
+        timer.Stop();
+
+        var enabled = unleash.IsEnabled("deltaFeature");
+
+        // Assert
+        Assert.That(enabled, Is.EqualTo(true));
+        Assert.That(requestEventIdHeaders.Count, Is.EqualTo(2));
+        Assert.IsTrue(string.IsNullOrWhiteSpace(requestEventIdHeaders[0]));
+        Assert.IsTrue(string.IsNullOrWhiteSpace(requestEventIdHeaders[1]));
+    }
+
+    [Test]
+    public async Task Reconnects_When_Server_Connection_Resets()
+    {
+        var requestEventIdHeaders = new List<string>();
+        var firstSent = false;
+
+        var payload = "{\"events\":[{\"type\":\"hydration\",\"eventId\":1,\"features\":[{\"name\":\"deltaFeature\",\"enabled\":false,\"strategies\":[],\"variants\":[]}],\"segments\":[]}]}";
+        var updatedPayload = "{\"events\":[{\"type\":\"feature-updated\",\"eventId\":2,\"feature\":{\"name\":\"deltaFeature\",\"enabled\":true,\"strategies\":[],\"variants\":[]}}]}";
+
+        var server = GetStreamingTestServer(async context =>
+        {
+            var lastEventIdHeader = context.Request.Headers["last-event-id"];
+            requestEventIdHeaders.Add(lastEventIdHeader);
+
+            if (!firstSent)
+            {
+                firstSent = true;
+                Console.WriteLine($"Sending 1");
+                await WriteEvents(context, new List<ServerSentEvent>()
+                {
+                    new ServerSentEvent { Id = "1", Payload = payload, Name = "unleash-connected" },
+                });
+            }
+            else
+            {
+                Console.WriteLine($"Sending 2");
+                await WriteEvents(context, new List<ServerSentEvent>()
+                {
+                    new ServerSentEvent { Id = "2", Payload = updatedPayload, Name = "unleash-updated" }
+                });
+            }
+        });
         var client = server.CreateClient();
         var clientFactory = new TestHttpClientFactory(client);
 
@@ -185,7 +190,54 @@ public class StreamingFeatureFetcherTests
             HttpClientFactory = clientFactory,
             AppName = "TestApp",
             InstanceTag = "TestInstance",
-            ScheduledTaskManager = new MockedTaskManager(),
+            ScheduledTaskManager = new NoOpTaskManager(),
+            ExperimentalUseStreaming = true,
+            UnleashApi = uri,
+        };
+
+        // Act
+        var unleash = new DefaultUnleash(settings);
+        await Task.Delay(TimeSpan.FromMilliseconds(200));
+        // Simulate a connection drop
+        await server.Host.StopAsync();
+        await server.Host.StartAsync();
+
+        await Task.Delay(TimeSpan.FromMilliseconds(1000));
+
+        var enabled = unleash.IsEnabled("deltaFeature");
+
+        // Assert
+        //Assert.IsTrue(enabled, "Feature should be enabled after handling the message.");
+        Assert.That(requestEventIdHeaders.Count, Is.EqualTo(2));
+        Assert.IsTrue(string.IsNullOrWhiteSpace(requestEventIdHeaders[0]));
+        Assert.That(requestEventIdHeaders[1], Is.EqualTo("1"));
+    }
+
+    [Test]
+    public async Task Receives_Successive_Events_From_Sse_Server()
+    {
+        var payload = "{\"events\":[{\"type\":\"hydration\",\"eventId\":1,\"features\":[{\"name\":\"deltaFeature\",\"enabled\":false,\"strategies\":[],\"variants\":[]}],\"segments\":[]}]}";
+        var updateData = "{\"events\":[{\"type\":\"feature-updated\",\"eventId\":2,\"feature\":{\"name\":\"deltaFeature\",\"enabled\":true,\"strategies\":[],\"variants\":[]}}]}";
+        // Arrange
+        var updated = 0;
+        var client = GetStreamingTestServerClient(async context =>
+        {
+            await WriteEvents(context, new List<ServerSentEvent>()
+            {
+                new ServerSentEvent { Id = "1", Payload = payload, Name = "unleash-connected" },
+                new ServerSentEvent { Id = "2", Payload = updateData, Name = "unleash-updated" }
+            });
+        });
+
+        var clientFactory = new TestHttpClientFactory(client);
+
+        var uri = new Uri("http://example.com/");
+        var settings = new UnleashSettings
+        {
+            HttpClientFactory = clientFactory,
+            AppName = "TestApp",
+            InstanceTag = "TestInstance",
+            ScheduledTaskManager = new NoOpTaskManager(),
             ExperimentalUseStreaming = true,
             UnleashApi = uri,
         };
@@ -214,27 +266,15 @@ public class StreamingFeatureFetcherTests
     {
         // Arrange
         var updated = false;
-        var server = new TestServer(new WebHostBuilder()
-        .ConfigureServices(services =>
+        var payload = "{\"events\":[{\"type\":\"hydration\",\"eventId\":1,\"features\":[{\"name\":\"deltaFeature\",\"enabled\":true,\"strategies\":[],\"variants\":[]}],\"segments\":[]}]}";
+        var client = GetStreamingTestServerClient(async context =>
         {
-            services.AddRouting();
-        })
-        .Configure(app =>
-        {
-            app.UseRouter(router =>
+            await WriteEvents(context, new List<ServerSentEvent>()
             {
-                router.MapGet("client/streaming", async context =>
-                {
-                    var payload = "{\"events\":[{\"type\":\"hydration\",\"eventId\":1,\"features\":[{\"name\":\"deltaFeature\",\"enabled\":true,\"strategies\":[],\"variants\":[]}],\"segments\":[]}]}";
-                    context.Response.Headers["Content-Type"] = "text/event-stream";
-                    await context.Response.WriteAsync("event: unleash-connected\n");
-                    await context.Response.WriteAsync($"data: {payload}\n\n");
-                    await context.Response.Body.FlushAsync();
-                });
+                new ServerSentEvent { Id = "1", Payload = payload, Name = "unleash-connected" },
             });
-        }));
-
-        var client = server.CreateClient();
+        });
+   
         var clientFactory = new TestHttpClientFactory(client);
 
         var uri = new Uri("http://example.com");
@@ -246,7 +286,7 @@ public class StreamingFeatureFetcherTests
             AppName = "TestApp",
             InstanceTag = "TestInstance",
             FileSystem = fileSystem,
-            ScheduledTaskManager = new MockedTaskManager(),
+            ScheduledTaskManager = new NoOpTaskManager(),
             ExperimentalUseStreaming = true,
             UnleashApi = uri,
         };
@@ -271,20 +311,5 @@ public class StreamingFeatureFetcherTests
         Assert.NotNull(fileContent, "File content should not be null");
         Assert.IsTrue(fileContent.StartsWith('{'));
         Assert.IsTrue(fileContent.IndexOf("deltaFeature") > -1, "Feature flag not present in engine state");
-    }
-}
-
-internal class TestHttpClientFactory : Unleash.IHttpClientFactory
-{
-    private HttpClient client;
-
-    public TestHttpClientFactory(HttpClient client)
-    {
-        this.client = client;
-    }
-
-    public HttpClient Create(Uri unleashApiUri)
-    {
-        return client;
     }
 }
