@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Http;
 
 namespace Unleash.Tests;
 
-public static class StreamingServer
+internal static class StreamingServer
 {
     /// <summary>
     /// Creates a TestServer for SSE and returns it

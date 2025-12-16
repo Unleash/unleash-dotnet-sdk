@@ -1,6 +1,6 @@
 namespace Unleash.Tests;
 
-public class ServerSentEvent
+internal class ServerSentEvent
 {
     public string Id { get; set; }
     public string Name { get; set; }
