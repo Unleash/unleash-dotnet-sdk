@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Unleash.Internal;
 using Unleash.Events;
 using Unleash.Logging;
-using System.IO;
 
 namespace Unleash.Streaming
 {
@@ -35,15 +34,8 @@ namespace Unleash.Streaming
 
         private async Task Reconnect()
         {
-            try
-            {
-                ApiClient.StopStreaming();
-                await StartAsync();
-            }
-            catch (Exception ex)
-            {
-                EventConfig?.RaiseError(new ErrorEvent() { ErrorType = ErrorType.Client, Error = ex });
-            }
+            ApiClient.StopStreaming();
+            await StartAsync();
         }
 
         public async Task StartAsync()
