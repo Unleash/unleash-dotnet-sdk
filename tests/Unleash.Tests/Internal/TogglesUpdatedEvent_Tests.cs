@@ -15,6 +15,19 @@ namespace Unleash.Tests.Internal
         public void TogglesUpdated_Event_Gets_Called_For_HasChanged_True()
         {
             // Arrange
+            var fetchState = @"
+            {
+              ""version"": 2,
+              ""features"": [
+                {
+                  ""name"": ""toggle-1"",
+                  ""type"": ""operational"",
+                  ""enabled"": true,
+                  ""impressionData"": false,
+                  ""strategies"": []
+                }
+              ]
+            }";
             TogglesUpdatedEvent callbackEvent = null;
             var callbackConfig = new EventCallbackConfig
             {
@@ -23,7 +36,7 @@ namespace Unleash.Tests.Internal
 
             var fakeApiClient = A.Fake<IUnleashApiClient>();
             A.CallTo(() => fakeApiClient.FetchToggles(A<string>._, A<CancellationToken>._, false))
-                .Returns(Task.FromResult(new FetchTogglesResult { HasChanged = true, State = "", Etag = "one" }));
+                .Returns(Task.FromResult(new FetchTogglesResult { HasChanged = true, State = fetchState, Etag = "one" }));
 
             var engine = new YggdrasilEngine();
 

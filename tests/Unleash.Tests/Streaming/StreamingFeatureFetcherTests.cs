@@ -67,8 +67,7 @@ public class StreamingFeatureFetcherTests
         };
 
         // Act
-        var unleash = new DefaultUnleash(settings);
-        unleash.ConfigureEvents(events =>
+        var unleash = new DefaultUnleash(settings, callback: events =>
         {
             events.TogglesUpdatedEvent = ev => { updated = true; };
         });
@@ -241,8 +240,7 @@ public class StreamingFeatureFetcherTests
         };
 
         // Act
-        var unleash = new DefaultUnleash(settings);
-        unleash.ConfigureEvents(events =>
+        var unleash = new DefaultUnleash(settings, callback: events =>
         {
             events.TogglesUpdatedEvent = ev => { updated++; };
         });
@@ -290,8 +288,7 @@ public class StreamingFeatureFetcherTests
         };
 
         // Act
-        var unleash = new DefaultUnleash(settings);
-        unleash.ConfigureEvents(events =>
+        var unleash = new DefaultUnleash(settings, callback: events =>
         {
             events.TogglesUpdatedEvent = ev => { updated = true; };
         });

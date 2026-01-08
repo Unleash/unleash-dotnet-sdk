@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Unleash.Events;
 
 namespace Unleash.Internal
@@ -8,8 +9,14 @@ namespace Unleash.Internal
         public Action<ImpressionEvent> ImpressionEvent { get; set; }
         public Action<ErrorEvent> ErrorEvent { get; set; }
         public Action<TogglesUpdatedEvent> TogglesUpdatedEvent { get; set; }
+        public Action<ReadyEvent> ReadyEvent { get; set; }
 
-        public void RaiseError(ErrorEvent evt)
+        internal void RaiseReady(ReadyEvent evt)
+        {
+            ReadyEvent?.Invoke(evt);
+        }
+
+        internal void RaiseError(ErrorEvent evt)
         {
             if (ErrorEvent != null)
             {
@@ -17,7 +24,7 @@ namespace Unleash.Internal
             }
         }
 
-        public void RaiseTogglesUpdated(TogglesUpdatedEvent evt)
+        internal void RaiseTogglesUpdated(TogglesUpdatedEvent evt)
         {
             if (TogglesUpdatedEvent != null)
             {
@@ -25,5 +32,17 @@ namespace Unleash.Internal
             }
         }
 
+        internal void EmitImpressionEvent(string type, UnleashContext context, bool enabled, string name, string variant = null)
+        {
+            ImpressionEvent?.Invoke(new ImpressionEvent
+            {
+                Type = type,
+                Context = context,
+                EventId = Guid.NewGuid().ToString(),
+                Enabled = enabled,
+                FeatureName = name,
+                Variant = variant
+            });
+        }
     }
 }

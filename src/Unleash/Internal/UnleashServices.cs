@@ -17,6 +17,8 @@ namespace Unleash
     internal class UnleashServices : IDisposable
     {
         private static readonly ILog Logger = LogProvider.GetLogger(typeof(UnleashServices));
+        private int ready = 0;
+
         private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         private readonly IUnleashScheduledTaskManager scheduledTaskManager;
         private readonly string connectionId = Guid.NewGuid().ToString();
@@ -29,6 +31,8 @@ namespace Unleash
         internal FetchFeatureTogglesTask FetchFeatureTogglesTask { get; }
         internal YggdrasilEngine engine { get; }
         internal StreamingFeatureFetcher StreamingFeatureFetcher { get; }
+        internal EventCallbackConfig EventConfig { get; }
+        internal event EventHandler OnReady;
 
         private static readonly IList<string> DefaultStrategyNames = new List<string> {
             "applicationHostname",
@@ -107,7 +111,7 @@ namespace Unleash
 
             if (!settings.ExperimentalUseStreaming)
             {
-                var fetchFeatureTogglesTask = new FetchFeatureTogglesTask(
+                FetchFeatureTogglesTask = new FetchFeatureTogglesTask(
                     engine,
                     apiClient,
                     settings.FileSystem,
@@ -119,9 +123,8 @@ namespace Unleash
                     Interval = settings.FetchTogglesInterval,
                     Etag = backupResult.InitialETag
                 };
-                FetchFeatureTogglesTask = fetchFeatureTogglesTask;
-
-                scheduledTasks.Add(fetchFeatureTogglesTask);
+                FetchFeatureTogglesTask.OnReady += OnReadyHandler;
+                scheduledTasks.Add(FetchFeatureTogglesTask);
             }
             else
             {
@@ -132,6 +135,7 @@ namespace Unleash
                     eventConfig,
                     backupManager
                 );
+                StreamingFeatureFetcher.OnReady += OnReadyHandler;
                 Task.Run(() => StreamingFeatureFetcher.StartAsync().ConfigureAwait(false));
             }
 
@@ -164,6 +168,18 @@ namespace Unleash
             }
 
             scheduledTaskManager.Configure(scheduledTasks, CancellationToken);
+            EventConfig = eventConfig;
+        }
+
+        internal void OnReadyHandler(object sender, EventArgs e)
+        {
+            var raiseReady = Interlocked.Exchange(ref ready, 1) == 0;
+            if (raiseReady)
+            {
+                // internal update first
+                OnReady?.Invoke(this, new EventArgs());
+                EventConfig?.RaiseReady(new ReadyEvent());
+            }
         }
 
         public void Dispose()

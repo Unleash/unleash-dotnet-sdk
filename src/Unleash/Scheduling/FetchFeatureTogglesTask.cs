@@ -25,6 +25,8 @@ namespace Unleash.Scheduling
         // In-memory reference of toggles/etags
         internal string Etag { get; set; }
 
+        internal event EventHandler OnReady;
+
         public FetchFeatureTogglesTask(
             YggdrasilEngine engine,
             IUnleashApiClient apiClient,
@@ -43,6 +45,7 @@ namespace Unleash.Scheduling
 
         public async Task ExecuteAsync(CancellationToken cancellationToken)
         {
+            var raiseReady = !ready;
             FetchTogglesResult result;
             try
             {
@@ -54,19 +57,39 @@ namespace Unleash.Scheduling
                 eventConfig?.RaiseError(new ErrorEvent() { ErrorType = ErrorType.Client, Error = ex });
                 throw new UnleashException("Exception while fetching from API", ex);
             }
-
             ready = true;
+            var updated = HandleResult(result);
 
+            if (updated)
+            {
+                backupManager.Save(new Backup(result.State, result.Etag));
+                Etag = result.Etag;
+
+                if (raiseReady)
+                {
+                    OnReady?.Invoke(this, new EventArgs());
+                }
+                // now that the toggle collection has been updated, raise the toggles updated event if configured
+                eventConfig?.RaiseTogglesUpdated(new TogglesUpdatedEvent { UpdatedOn = DateTime.UtcNow });
+            }
+            else if (raiseReady)
+            {
+                OnReady?.Invoke(this, new EventArgs());
+            }
+        }
+
+        private bool HandleResult(FetchTogglesResult result)
+        {
             if (!result.HasChanged)
             {
-                return;
+                return false;
             }
 
             if (string.IsNullOrEmpty(result.Etag))
-                return;
+                return false;
 
             if (result.Etag == Etag)
-                return;
+                return false;
 
             if (!string.IsNullOrEmpty(result.State))
             {
@@ -80,13 +103,10 @@ namespace Unleash.Scheduling
                     eventConfig?.RaiseError(new ErrorEvent() { ErrorType = ErrorType.TogglesUpdate, Error = ex });
                     throw new UnleashException("Exception while updating toggle collection", ex);
                 }
+                return true;
             }
 
-            // now that the toggle collection has been updated, raise the toggles updated event if configured
-            eventConfig?.RaiseTogglesUpdated(new TogglesUpdatedEvent { UpdatedOn = DateTime.UtcNow });
-
-            backupManager.Save(new Backup(result.State, result.Etag));
-            Etag = result.Etag;
+            return false;
         }
 
         public string Name => "fetch-feature-toggles-task";

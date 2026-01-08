@@ -45,8 +45,7 @@ namespace Unleash.Tests.Internal
               ]
             }";
 
-            var unleash = CreateUnleash(appname, state);
-            unleash.ConfigureEvents(cfg =>
+            var unleash = CreateUnleash(appname, state, cfg =>
             {
                 cfg.ImpressionEvent = evt => { callbackEvent = evt; };
             });
@@ -94,8 +93,7 @@ namespace Unleash.Tests.Internal
                 }
               ]
             }";
-            var unleash = CreateUnleash(appname, state);
-            unleash.ConfigureEvents(cfg =>
+            var unleash = CreateUnleash(appname, state, cfg =>
             {
                 cfg.ImpressionEvent = evt => { callbackEvent = evt; };
             });
@@ -139,8 +137,7 @@ namespace Unleash.Tests.Internal
                 }
               ]
             }";
-            var unleash = CreateUnleash(appname, state);
-            unleash.ConfigureEvents(cfg =>
+            var unleash = CreateUnleash(appname, state, cfg =>
             {
                 cfg.ImpressionEvent = evt => { throw new Exception("Something bad just happened!"); };
             });
@@ -180,8 +177,7 @@ namespace Unleash.Tests.Internal
                 }
               ]
             }";
-            var unleash = CreateUnleash(appname, state);
-            unleash.ConfigureEvents(cfg =>
+            var unleash = CreateUnleash(appname, state, cfg =>
             {
                 cfg.ImpressionEvent = null;
             });
@@ -232,8 +228,7 @@ namespace Unleash.Tests.Internal
                 }
               ]
             }";
-            var unleash = CreateUnleash(appname, state);
-            unleash.ConfigureEvents(cfg =>
+            var unleash = CreateUnleash(appname, state, cfg =>
             {
                 cfg.ImpressionEvent = evt => { callbackEvent = evt; };
             });
@@ -300,7 +295,7 @@ namespace Unleash.Tests.Internal
             enabled.Should().BeTrue();
         }
 
-        public static IUnleash CreateUnleash(string name, string state)
+        public static IUnleash CreateUnleash(string name, string state, Action<EventCallbackConfig> callback = null)
         {
             var fakeHttpClientFactory = A.Fake<IHttpClientFactory>();
             var fakeHttpMessageHandler = new TestHttpMessageHandler();
@@ -338,7 +333,7 @@ namespace Unleash.Tests.Internal
                 DisableSingletonWarning = true
             };
 
-            var unleash = new DefaultUnleash(settings);
+            var unleash = new DefaultUnleash(settings, callback);
 
             return unleash;
         }

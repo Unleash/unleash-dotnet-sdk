@@ -13,13 +13,39 @@ namespace Unleash.Tests.Internal
         [Test]
         public void Etag_Gets_Used_For_FetchToggles()
         {
+            var fetchState1 = @"
+            {
+              ""version"": 2,
+              ""features"": [
+                {
+                  ""name"": ""toggle-1"",
+                  ""type"": ""operational"",
+                  ""enabled"": true,
+                  ""impressionData"": false,
+                  ""strategies"": []
+                }
+              ]
+            }";
+            var fetchState2 = @"
+            {
+              ""version"": 2,
+              ""features"": [
+                {
+                  ""name"": ""toggle-1"",
+                  ""type"": ""operational"",
+                  ""enabled"": true,
+                  ""impressionData"": true,
+                  ""strategies"": []
+                }
+              ]
+            }";
             // Arrange
             var fakeApiClient = A.Fake<IUnleashApiClient>();
             A.CallTo(() => fakeApiClient.FetchToggles(null, A<CancellationToken>._, false))
-                .Returns(Task.FromResult(new FetchTogglesResult { HasChanged = true, State = "", Etag = "one" }));
+                .Returns(Task.FromResult(new FetchTogglesResult { HasChanged = true, State = fetchState1, Etag = "one" }));
 
             A.CallTo(() => fakeApiClient.FetchToggles("one", A<CancellationToken>._, false))
-                .Returns(Task.FromResult(new FetchTogglesResult { HasChanged = true, State = "", Etag = "two" }));
+                .Returns(Task.FromResult(new FetchTogglesResult { HasChanged = true, State = fetchState2, Etag = "two" }));
 
             var engine = new YggdrasilEngine();
 

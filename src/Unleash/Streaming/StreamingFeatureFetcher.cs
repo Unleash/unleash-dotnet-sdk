@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Unleash.Internal;
 using Unleash.Events;
 using Unleash.Logging;
+using System.Threading;
 
 namespace Unleash.Streaming
 {
@@ -15,6 +16,9 @@ namespace Unleash.Streaming
     internal class StreamingFeatureFetcher
     {
         private static readonly ILog Logger = LogProvider.GetLogger(typeof(StreamingFeatureFetcher));
+        private int ready = 0;
+
+        internal event EventHandler OnReady;
 
         public StreamingFeatureFetcher(UnleashSettings settings, IUnleashApiClient apiClient, YggdrasilEngine engine, EventCallbackConfig eventConfig, IBackupManager backupManager)
         {
@@ -76,6 +80,12 @@ namespace Unleash.Streaming
             try
             {
                 Engine.TakeState(data);
+
+                var raiseReady = Interlocked.Exchange(ref ready, 1) == 0;
+                if (raiseReady)
+                {
+                    OnReady?.Invoke(this, new EventArgs());
+                }
 
                 // now that the toggle collection has been updated, raise the toggles updated event if configured
                 EventConfig?.RaiseTogglesUpdated(new TogglesUpdatedEvent { UpdatedOn = DateTime.UtcNow });

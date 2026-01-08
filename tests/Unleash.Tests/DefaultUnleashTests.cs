@@ -22,11 +22,8 @@ namespace Unleash.Tests
                 DisableSingletonWarning = true
             };
 
-            var unleash = new DefaultUnleash(settings);
             var callbackCalled = false;
-
-            // Act
-            unleash.ConfigureEvents(cfg =>
+            var unleash = new DefaultUnleash(settings, callback: cfg =>
             {
                 callbackCalled = true;
             });

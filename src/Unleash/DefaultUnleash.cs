@@ -22,20 +22,19 @@ namespace Unleash
 
         internal readonly UnleashServices services;
 
-        private readonly WarnOnce warnOnce;
-
         ///// <summary>
         ///// Initializes a new instance of Unleash client.
         ///// </summary>
-        ///// <param name="config">Unleash settings</param>
+        ///// <param name="settings">Unleash settings</param>
+        ///// <param name="callback">Callback that called during the constructor to configure event listeners/callbacks</param>
         ///// <param name="strategies">Custom strategies.</param>
-        public DefaultUnleash(UnleashSettings settings, params IStrategy[] strategies)
+        public DefaultUnleash(UnleashSettings settings, Action<EventCallbackConfig> callback = null, params IStrategy[] strategies)
         {
             var currentInstanceNo = Interlocked.Increment(ref InitializedInstanceCount);
 
             this.settings = settings;
 
-            warnOnce = new WarnOnce(Logger);
+            ConfigureEvents(callback);
 
             var settingsValidator = new UnleashSettingsValidator();
             settingsValidator.Validate(settings);
@@ -120,47 +119,27 @@ namespace Unleash
             return Variant.UpgradeVariant(variant);
         }
 
-        public void ConfigureEvents(Action<EventCallbackConfig> callback)
-        {
-            if (callback == null)
-            {
-                Logger.Error(() => $"UNLEASH: Unleash->ConfigureEvents parameter callback is null");
-                return;
-            }
-
-            try
-            {
-                callback(EventConfig);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(() => $"UNLEASH: Unleash->ConfigureEvents executing callback threw exception: {ex.Message}");
-            }
-        }
-
         private void EmitImpressionEvent(string type, UnleashContext context, bool enabled, string name, string variant = null)
         {
-            if (EventConfig?.ImpressionEvent == null)
-            {
-                Logger.Error(() => $"UNLEASH: Unleash->ImpressionData callback is null, unable to emit event");
-                return;
-            }
-
             try
             {
-                EventConfig.ImpressionEvent(new ImpressionEvent
-                {
-                    Type = type,
-                    Context = context,
-                    EventId = Guid.NewGuid().ToString(),
-                    Enabled = enabled,
-                    FeatureName = name,
-                    Variant = variant
-                });
+                EventConfig.EmitImpressionEvent(type, context, enabled, name, variant);
             }
             catch (Exception ex)
             {
                 Logger.Error(() => $"UNLEASH: Emitting impression event callback threw exception: {ex.Message}");
+            }
+        }
+
+        private void ConfigureEvents(Action<EventCallbackConfig> callback)
+        {
+            try
+            {
+                callback?.Invoke(EventConfig);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(() => $"UNLEASH: Unleash->ConfigureEvents executing callback threw exception: {ex.Message}");
             }
         }
 

@@ -77,7 +77,5 @@ namespace Unleash
         /// </summary>
         /// <returns>A list of metadata about known feature flags</returns>
         ICollection<ToggleDefinition> ListKnownToggles();
-
-        void ConfigureEvents(Action<EventCallbackConfig> config);
     }
 }
