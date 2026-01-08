@@ -37,7 +37,7 @@ namespace Unleash.ClientFactory
                         .GetAwaiter()
                         .GetResult();
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     unleash.Dispose();
                     throw;
@@ -67,7 +67,7 @@ namespace Unleash.ClientFactory
                 {
                     await unleash.services.FetchFeatureTogglesTask.ExecuteAsync(CancellationToken.None).ConfigureAwait(false);
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     unleash.Dispose();
                     throw;
