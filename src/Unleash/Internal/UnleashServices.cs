@@ -194,6 +194,12 @@ namespace Unleash
             {
                 Logger.Warn(() => $"UNLEASH: Disposing ScheduledTaskManager of type {scheduledTaskManager.GetType().Name}");
             }
+
+            if (FetchFeatureTogglesTask != null)
+            {
+                FetchFeatureTogglesTask.OnReady -= OnReadyHandler;
+            }
+
             scheduledTaskManager?.Dispose();
             StreamingFeatureFetcher?.Dispose();
         }

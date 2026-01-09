@@ -2,6 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Unleash.Internal;
+using Unleash.Logging;
 using Unleash.Strategies;
 
 namespace Unleash.ClientFactory
@@ -9,12 +10,23 @@ namespace Unleash.ClientFactory
     /// <inheritdoc />
     public class UnleashClientFactory : IUnleashClientFactory
     {
+        private static readonly ILog Logger = LogProvider.GetLogger(typeof(UnleashClientFactory));
         private static readonly TaskFactory TaskFactory =
             new TaskFactory(CancellationToken.None,
                           TaskCreationOptions.None,
                           TaskContinuationOptions.None,
                           TaskScheduler.Default);
 
+        /// <summary>
+        /// Initializes a new instance of Unleash client.
+        /// </summary>
+        /// <param name="settings">Unleash settings.</param>
+        /// <param name="synchronousInitialization">If true, fetch and cache toggles before returning. If false, allow the unleash client schedule an initial poll of features in the background</param>
+        /// <param name="strategies">Custom strategies, added in addtion to builtIn strategies.</param>
+        public IUnleash CreateClient(UnleashSettings settings, bool synchronousInitialization = false, params IStrategy[] strategies)
+        {
+            return CreateClient(settings, synchronousInitialization, null, strategies);
+        }
         /// <summary>
         /// Initializes a new instance of Unleash client.
         /// </summary>
@@ -37,9 +49,10 @@ namespace Unleash.ClientFactory
                         .GetAwaiter()
                         .GetResult();
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
                     unleash.Dispose();
+                    Logger.Error(() => $"UNLEASH: Exception in UnleashClientFactory when initializing synchronously", ex);
                     throw;
                 }
 
@@ -48,6 +61,16 @@ namespace Unleash.ClientFactory
             return new DefaultUnleash(settings, callback, strategies);
         }
 
+        /// <summary>
+        /// Initializes a new instance of Unleash client.
+        /// </summary>
+        /// <param name="settings">Unleash settings.</param>
+        /// <param name="synchronousInitialization">If true, fetch and cache toggles before returning. If false, allow the unleash client schedule an initial poll of features in the background</param>
+        /// <param name="strategies">Custom strategies, added in addtion to builtIn strategies.</param>
+        public async Task<IUnleash> CreateClientAsync(UnleashSettings settings, bool synchronousInitialization = false, params IStrategy[] strategies)
+        {
+            return await CreateClientAsync(settings, synchronousInitialization, null, strategies).ConfigureAwait(false);
+        }
 
         /// <summary>
         /// Initializes a new instance of Unleash client.
@@ -67,9 +90,10 @@ namespace Unleash.ClientFactory
                 {
                     await unleash.services.FetchFeatureTogglesTask.ExecuteAsync(CancellationToken.None).ConfigureAwait(false);
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
                     unleash.Dispose();
+                    Logger.Error(() => $"UNLEASH: Exception in UnleashClientFactory when initializing synchronously", ex);
                     throw;
                 }
                 return unleash;

@@ -58,7 +58,7 @@ namespace Unleash.Scheduling
                 throw new UnleashException("Exception while fetching from API", ex);
             }
             ready = true;
-            var updated = HandleResult(result);
+            var updated = TryApplyFetchedState(result);
 
             if (updated)
             {
@@ -78,7 +78,7 @@ namespace Unleash.Scheduling
             }
         }
 
-        private bool HandleResult(FetchTogglesResult result)
+        private bool TryApplyFetchedState(FetchTogglesResult result)
         {
             if (!result.HasChanged)
             {
