@@ -55,6 +55,7 @@ namespace Unleash
             List<Yggdrasil.IStrategy> yggdrasilStrategies = strategies?.Select(s => new CustomStrategyAdapter(s)).Cast<Yggdrasil.IStrategy>().ToList();
 
             engine = new YggdrasilEngine(yggdrasilStrategies);
+            EventConfig = eventConfig;
 
             // Cancellation
             CancellationToken = cancellationTokenSource.Token;
@@ -168,7 +169,6 @@ namespace Unleash
             }
 
             scheduledTaskManager.Configure(scheduledTasks, CancellationToken);
-            EventConfig = eventConfig;
         }
 
         internal void OnReadyHandler(object sender, EventArgs e)
@@ -178,7 +178,7 @@ namespace Unleash
             {
                 // internal update first
                 OnReady?.Invoke(this, new EventArgs());
-                EventConfig?.RaiseReady(new ReadyEvent());
+                EventConfig.RaiseReady(new ReadyEvent());
             }
         }
 
