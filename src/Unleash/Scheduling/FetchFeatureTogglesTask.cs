@@ -60,12 +60,6 @@ namespace Unleash.Scheduling
             ready = true;
             var updated = TryApplyFetchedState(result);
 
-            if (updated)
-            {
-                backupManager.Save(new Backup(result.State, result.Etag));
-                Etag = result.Etag;
-            }
-
             if (raiseReady)
             {
                 OnReady?.Invoke(this, new EventArgs());
@@ -96,6 +90,8 @@ namespace Unleash.Scheduling
                 try
                 {
                     engine.TakeState(result.State);
+                    backupManager.Save(new Backup(result.State, result.Etag));
+                    Etag = result.Etag;
                 }
                 catch (Exception ex)
                 {
@@ -106,7 +102,7 @@ namespace Unleash.Scheduling
                 return true;
             }
 
-            return true;
+            return false;
         }
 
         public string Name => "fetch-feature-toggles-task";
