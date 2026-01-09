@@ -64,17 +64,17 @@ namespace Unleash.Scheduling
             {
                 backupManager.Save(new Backup(result.State, result.Etag));
                 Etag = result.Etag;
-
-                if (raiseReady)
-                {
-                    OnReady?.Invoke(this, new EventArgs());
-                }
-                // now that the toggle collection has been updated, raise the toggles updated event if configured
-                eventConfig?.RaiseTogglesUpdated(new TogglesUpdatedEvent { UpdatedOn = DateTime.UtcNow });
             }
-            else if (raiseReady)
+
+            if (raiseReady)
             {
                 OnReady?.Invoke(this, new EventArgs());
+            }
+
+            if (updated)
+            {
+                // now that the toggle collection has been updated, raise the toggles updated event if configured
+                eventConfig?.RaiseTogglesUpdated(new TogglesUpdatedEvent { UpdatedOn = DateTime.UtcNow });
             }
         }
 
@@ -106,7 +106,7 @@ namespace Unleash.Scheduling
                 return true;
             }
 
-            return false;
+            return true;
         }
 
         public string Name => "fetch-feature-toggles-task";
