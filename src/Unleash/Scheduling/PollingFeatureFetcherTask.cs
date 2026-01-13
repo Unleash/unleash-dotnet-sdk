@@ -61,12 +61,12 @@ namespace Unleash.Scheduling
                         .GetAwaiter()
                         .GetResult();
             }
-            scheduledTaskManager.Start(fetchFeatureTogglesTask);   
+            scheduledTaskManager.Start(fetchFeatureTogglesTask);
         }
 
         public void Stop()
         {
-            scheduledTaskManager.Stop(fetchFeatureTogglesTask);   
+            scheduledTaskManager.Stop(fetchFeatureTogglesTask);
         }
 
         public void Dispose()

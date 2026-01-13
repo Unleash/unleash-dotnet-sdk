@@ -28,7 +28,7 @@ namespace Unleash
         ///// <param name="settings">Unleash settings</param>
         ///// <param name="callback">Callback that called during the constructor to configure event listeners/callbacks</param>
         ///// <param name="strategies">Custom strategies.</param>
-        public  DefaultUnleash(UnleashSettings settings, Action<EventCallbackConfig> callback = null, params IStrategy[] strategies) :
+        public DefaultUnleash(UnleashSettings settings, Action<EventCallbackConfig> callback = null, params IStrategy[] strategies) :
             this(settings, false, callback, strategies)
         { }
 
