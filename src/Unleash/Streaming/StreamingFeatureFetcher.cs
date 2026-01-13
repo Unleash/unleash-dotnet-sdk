@@ -2,6 +2,7 @@ using Unleash.Communication;
 using Yggdrasil;
 using LaunchDarkly.EventSource;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Unleash.Internal;
 using Unleash.Events;
@@ -20,19 +21,20 @@ namespace Unleash.Streaming
 
         internal event EventHandler OnReady;
 
-        public StreamingFeatureFetcher(UnleashSettings settings, IUnleashApiClient apiClient, YggdrasilEngine engine, EventCallbackConfig eventConfig, IBackupManager backupManager)
+        public StreamingFeatureFetcher(UnleashSettings settings, IUnleashApiClient apiClient, YggdrasilEngine engine, EventCallbackConfig eventConfig, IBackupManager backupManager, Action<string> modeChange)
         {
             Settings = settings;
             ApiClient = apiClient;
             Engine = engine;
             EventConfig = eventConfig;
             BackupManager = backupManager;
+            ModeChange = modeChange;
         }
 
         private YggdrasilEngine Engine { get; set; }
         private EventCallbackConfig EventConfig { get; set; }
         private IBackupManager BackupManager { get; set; }
-        private IFileSystem FileSystem { get; }
+        public Action<string> ModeChange { get; }
         private UnleashSettings Settings { get; set; }
         private IUnleashApiClient ApiClient { get; set; }
 
@@ -58,6 +60,11 @@ namespace Unleash.Streaming
                 EventConfig?.RaiseError(new ErrorEvent() { ErrorType = ErrorType.Client, Error = ex });
                 throw new UnleashException("Exception while starting streaming", ex);
             }
+        }
+
+        public async Task StopAsync()
+        {
+            ApiClient.StopStreaming();
         }
 
         public void HandleMessage(object target, MessageReceivedEventArgs data)

@@ -85,10 +85,9 @@ namespace Unleash.Tests.Internal
                 .ThrowsAsync(() => new HttpRequestException("The remote server refused the connection"));
 
             var engine = A.Fake<YggdrasilEngine>();
-            var filesystem = new MockFileSystem();
             var tokenSource = new CancellationTokenSource();
             var backupManager = new NoOpBackupManager();
-            var task = new FetchFeatureTogglesTask(engine, fakeApiClient, filesystem, callbackConfig, backupManager, false);
+            var task = new FetchFeatureTogglesTask(engine, fakeApiClient, callbackConfig, backupManager, false);
 
             // Act
             try

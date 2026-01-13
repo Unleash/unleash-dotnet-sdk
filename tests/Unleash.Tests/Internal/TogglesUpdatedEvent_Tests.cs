@@ -40,10 +40,9 @@ namespace Unleash.Tests.Internal
 
             var engine = new YggdrasilEngine();
 
-            var filesystem = new MockFileSystem();
             var tokenSource = new CancellationTokenSource();
             var backupManager = new NoOpBackupManager();
-            var task = new FetchFeatureTogglesTask(engine, fakeApiClient, filesystem, callbackConfig, backupManager, false);
+            var task = new FetchFeatureTogglesTask(engine, fakeApiClient, callbackConfig, backupManager, false);
 
             // Act
             Task.WaitAll(task.ExecuteAsync(tokenSource.Token));
@@ -68,10 +67,9 @@ namespace Unleash.Tests.Internal
 
             var engine = new YggdrasilEngine();
 
-            var filesystem = new MockFileSystem();
             var tokenSource = new CancellationTokenSource();
             var backupManager = new NoOpBackupManager();
-            var task = new FetchFeatureTogglesTask(engine, fakeApiClient, filesystem, callbackConfig, backupManager, false);
+            var task = new FetchFeatureTogglesTask(engine, fakeApiClient, callbackConfig, backupManager, false);
 
             // Act
             Task.WaitAll(task.ExecuteAsync(tokenSource.Token));
@@ -110,10 +108,9 @@ namespace Unleash.Tests.Internal
             A.CallTo(() => fakeApiClient.FetchToggles(A<string>._, A<CancellationToken>._, false))
                 .Returns(Task.FromResult(new FetchTogglesResult { HasChanged = true, State = fetchState, Etag = "one" }));
 
-            var filesystem = new MockFileSystem();
             var tokenSource = new CancellationTokenSource();
             var backupManager = new NoOpBackupManager();
-            var task = new FetchFeatureTogglesTask(engine, fakeApiClient, filesystem, callbackConfig, backupManager, false);
+            var task = new FetchFeatureTogglesTask(engine, fakeApiClient, callbackConfig, backupManager, false);
 
             // Act
             Task.WaitAll(task.ExecuteAsync(tokenSource.Token));

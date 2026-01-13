@@ -133,9 +133,9 @@ namespace Unleash.Tests.Specifications
             var fakeFileSystem = new MockFileSystem();
 
             A.CallTo(() => fakeHttpClientFactory.Create(A<Uri>._)).Returns(httpClient);
-            A.CallTo(() => fakeScheduler.Configure(A<IEnumerable<IUnleashScheduledTask>>._, A<CancellationToken>._)).Invokes(action =>
+            A.CallTo(() => fakeScheduler.ConfigureTask(A<IUnleashScheduledTask>._, A<CancellationToken>._, A<bool>._)).Invokes(action =>
             {
-                var task = ((IEnumerable<IUnleashScheduledTask>)action.Arguments[0]).First();
+                var task = (IUnleashScheduledTask)action.Arguments[0];
                 task.ExecuteAsync((CancellationToken)action.Arguments[1]).Wait();
             });
 

@@ -18,15 +18,7 @@ namespace Unleash.Scheduling
 
         private readonly Dictionary<string, Timer> timers = new Dictionary<string, Timer>();
 
-        public void Configure(IEnumerable<IUnleashScheduledTask> tasks, CancellationToken cancellationToken)
-        {
-            foreach (var task in tasks)
-            {
-                ConfigureTask(task, cancellationToken);
-            }
-        }
-
-        private void ConfigureTask(IUnleashScheduledTask task, CancellationToken cancellationToken)
+        public void ConfigureTask(IUnleashScheduledTask task, CancellationToken cancellationToken, bool start)
         {
             var name = task.Name;
 
@@ -82,8 +74,35 @@ namespace Unleash.Scheduling
 
             timers.Add(name, timer);
 
-            // Now it's ok to start the timer.
-            timer.SafeTimerChange(dueTime, period, ref _disposed);
+            if (start)
+            {
+                // Now it's ok to start the timer.
+                timer.SafeTimerChange(dueTime, period, ref _disposed);
+            }
+        }
+
+        public void Start(IUnleashScheduledTask task)
+        {
+            var dueTime = task.ExecuteDuringStartup
+                ? TimeSpan.Zero
+                : task.Interval;
+
+            var period = task.Interval == TimeSpan.Zero
+                ? Timeout.InfiniteTimeSpan
+                : task.Interval;
+
+            if (timers.TryGetValue(task.Name, out var timer))
+            {
+                timer.SafeTimerChange(dueTime, period, ref _disposed);
+            }
+        }
+
+        public void Stop(IUnleashScheduledTask task)
+        {
+            if (timers.TryGetValue(task.Name, out var timerToStop))
+            {
+                timerToStop.SafeTimerChange(Timeout.Infinite, Timeout.Infinite, ref _disposed);
+            }
         }
 
         private volatile bool _shuttingDown;

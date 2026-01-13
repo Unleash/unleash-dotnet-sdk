@@ -15,7 +15,6 @@ namespace Unleash.Scheduling
     {
         private static readonly ILog Logger = LogProvider.GetLogger(typeof(FetchFeatureTogglesTask));
         private readonly IBackupManager backupManager;
-        private readonly IFileSystem fileSystem;
         private readonly EventCallbackConfig eventConfig;
         private readonly IUnleashApiClient apiClient;
         private readonly YggdrasilEngine engine;
@@ -30,14 +29,12 @@ namespace Unleash.Scheduling
         public FetchFeatureTogglesTask(
             YggdrasilEngine engine,
             IUnleashApiClient apiClient,
-            IFileSystem fileSystem,
             EventCallbackConfig eventConfig,
             IBackupManager backupManager,
             bool throwOnInitialLoadFail)
         {
             this.engine = engine;
             this.apiClient = apiClient;
-            this.fileSystem = fileSystem;
             this.eventConfig = eventConfig;
             this.backupManager = backupManager;
             this.throwOnInitialLoadFail = throwOnInitialLoadFail;

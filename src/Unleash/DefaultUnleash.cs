@@ -28,7 +28,11 @@ namespace Unleash
         ///// <param name="settings">Unleash settings</param>
         ///// <param name="callback">Callback that called during the constructor to configure event listeners/callbacks</param>
         ///// <param name="strategies">Custom strategies.</param>
-        public DefaultUnleash(UnleashSettings settings, Action<EventCallbackConfig> callback = null, params IStrategy[] strategies)
+        public  DefaultUnleash(UnleashSettings settings, Action<EventCallbackConfig> callback = null, params IStrategy[] strategies) :
+            this(settings, false, callback, strategies)
+        { }
+
+        internal DefaultUnleash(UnleashSettings settings, bool synchronousInitialization, Action<EventCallbackConfig> callback = null, params IStrategy[] strategies)
         {
             var currentInstanceNo = Interlocked.Increment(ref InitializedInstanceCount);
 
@@ -39,7 +43,7 @@ namespace Unleash
             var settingsValidator = new UnleashSettingsValidator();
             settingsValidator.Validate(settings);
 
-            services = new UnleashServices(settings, EventConfig, strategies?.ToList());
+            services = new UnleashServices(settings, EventConfig, synchronousInitialization, strategies?.ToList());
 
             Logger.Info(() => $"UNLEASH: Unleash instance number {currentInstanceNo} is initialized and configured with: {settings}");
 

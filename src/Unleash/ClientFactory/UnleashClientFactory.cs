@@ -11,11 +11,6 @@ namespace Unleash.ClientFactory
     public class UnleashClientFactory : IUnleashClientFactory
     {
         private static readonly ILog Logger = LogProvider.GetLogger(typeof(UnleashClientFactory));
-        private static readonly TaskFactory TaskFactory =
-            new TaskFactory(CancellationToken.None,
-                          TaskCreationOptions.None,
-                          TaskContinuationOptions.None,
-                          TaskScheduler.Default);
 
         /// <summary>
         /// Initializes a new instance of Unleash client.
@@ -30,23 +25,15 @@ namespace Unleash.ClientFactory
             {
                 settings.ScheduleFeatureToggleFetchImmediatly = false;
                 settings.ThrowOnInitialFetchFail = true;
-                var unleash = new DefaultUnleash(settings, callback, strategies);
                 try
                 {
-                    TaskFactory
-                        .StartNew(() => unleash.services.FetchFeatureTogglesTask.ExecuteAsync(CancellationToken.None))
-                        .Unwrap()
-                        .GetAwaiter()
-                        .GetResult();
+                    return new DefaultUnleash(settings, true, callback, strategies);
                 }
                 catch (Exception ex)
                 {
-                    unleash.Dispose();
                     Logger.Error(() => $"UNLEASH: Exception in UnleashClientFactory when initializing synchronously", ex);
                     throw;
                 }
-
-                return unleash;
             }
             return new DefaultUnleash(settings, callback, strategies);
         }
@@ -64,18 +51,15 @@ namespace Unleash.ClientFactory
             {
                 settings.ScheduleFeatureToggleFetchImmediatly = false;
                 settings.ThrowOnInitialFetchFail = true;
-                var unleash = new DefaultUnleash(settings, callback, strategies);
                 try
                 {
-                    await unleash.services.FetchFeatureTogglesTask.ExecuteAsync(CancellationToken.None).ConfigureAwait(false);
+                    return new DefaultUnleash(settings, true, callback, strategies);
                 }
                 catch (Exception ex)
                 {
-                    unleash.Dispose();
                     Logger.Error(() => $"UNLEASH: Exception in UnleashClientFactory when initializing synchronously", ex);
                     throw;
                 }
-                return unleash;
             }
             return new DefaultUnleash(settings, callback, strategies);
         }

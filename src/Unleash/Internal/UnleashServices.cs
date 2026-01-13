@@ -23,16 +23,22 @@ namespace Unleash
         private readonly IUnleashScheduledTaskManager scheduledTaskManager;
         private readonly string connectionId = Guid.NewGuid().ToString();
 
+        private PollingFeatureFetcher PollingFeatureFetcher;
+        private StreamingFeatureFetcher StreamingFeatureFetcher;
+        private EventCallbackConfig EventConfig { get; }
+        private bool IsCustomScheduledTaskManager { get { return scheduledTaskManager != null && !(scheduledTaskManager is SystemTimerScheduledTaskManager); } }
+
         public const string supportedSpecVersion = "5.1.9";
 
         internal CancellationToken CancellationToken { get; }
         internal IUnleashContextProvider ContextProvider { get; }
         internal bool IsMetricsDisabled { get; }
-        internal FetchFeatureTogglesTask FetchFeatureTogglesTask { get; }
         internal YggdrasilEngine engine { get; }
-        internal StreamingFeatureFetcher StreamingFeatureFetcher { get; }
-        internal EventCallbackConfig EventConfig { get; }
-        internal event EventHandler OnReady;
+
+        /// <summary>
+        /// Triggers on Polling/Streaming first proper hydration
+        /// </summary>
+        internal event EventHandler OnHydrated;
 
         private static readonly IList<string> DefaultStrategyNames = new List<string> {
             "applicationHostname",
@@ -44,13 +50,19 @@ namespace Unleash
             "remoteAddress",
             "userWithId"
         };
+        public UnleashServices(UnleashSettings settings, EventCallbackConfig eventConfig, List<Strategies.IStrategy> strategies = null) :
+            this(settings, eventConfig, false, strategies)
+        {
+        }
 
-        public UnleashServices(UnleashSettings settings, EventCallbackConfig eventConfig, List<Strategies.IStrategy> strategies = null)
+        internal UnleashServices(UnleashSettings settings, EventCallbackConfig eventConfig, bool synchronousInitialization, List<Strategies.IStrategy> strategies = null)
         {
             if (settings.FileSystem == null)
             {
                 settings.FileSystem = new FileSystem(settings.Encoding);
             }
+
+            scheduledTaskManager = settings.ScheduledTaskManager ?? new SystemTimerScheduledTaskManager();
 
             List<Yggdrasil.IStrategy> yggdrasilStrategies = strategies?.Select(s => new CustomStrategyAdapter(s)).Cast<Yggdrasil.IStrategy>().ToList();
 
@@ -104,44 +116,8 @@ namespace Unleash
                 apiClient = settings.UnleashApiClient;
             }
 
-            scheduledTaskManager = settings.ScheduledTaskManager ?? new SystemTimerScheduledTaskManager();
-
             IsMetricsDisabled = settings.SendMetricsInterval == null;
-
-            var scheduledTasks = new List<IUnleashScheduledTask>(3);
-
-            if (!settings.ExperimentalUseStreaming)
-            {
-                FetchFeatureTogglesTask = new FetchFeatureTogglesTask(
-                    engine,
-                    apiClient,
-                    settings.FileSystem,
-                    eventConfig,
-                    backupManager,
-                    settings.ThrowOnInitialFetchFail)
-                {
-                    ExecuteDuringStartup = settings.ScheduleFeatureToggleFetchImmediatly,
-                    Interval = settings.FetchTogglesInterval,
-                    Etag = backupResult.InitialETag
-                };
-                FetchFeatureTogglesTask.OnReady += OnReadyHandler;
-                scheduledTasks.Add(FetchFeatureTogglesTask);
-            }
-            else
-            {
-                StreamingFeatureFetcher = new StreamingFeatureFetcher(
-                    settings,
-                    apiClient,
-                    engine,
-                    eventConfig,
-                    backupManager
-                );
-                StreamingFeatureFetcher.OnReady += OnReadyHandler;
-                Task.Run(() => StreamingFeatureFetcher.StartAsync().ConfigureAwait(false));
-            }
-
-
-            if (settings.SendMetricsInterval != null)
+            if (!IsMetricsDisabled)
             {
                 var strategyNames = (strategies == null ? DefaultStrategyNames : DefaultStrategyNames.Concat(strategies.Select(s => s.Name))).ToList();
 
@@ -154,7 +130,7 @@ namespace Unleash
                     ExecuteDuringStartup = true
                 };
 
-                scheduledTasks.Add(clientRegistrationBackgroundTask);
+                scheduledTaskManager.ConfigureTask(clientRegistrationBackgroundTask, cancellationTokenSource.Token, true);
 
                 var clientMetricsBackgroundTask = new ClientMetricsBackgroundTask(
                     engine,
@@ -165,20 +141,72 @@ namespace Unleash
                     Interval = settings.SendMetricsInterval.Value
                 };
 
-                scheduledTasks.Add(clientMetricsBackgroundTask);
+                scheduledTaskManager.ConfigureTask(clientMetricsBackgroundTask, cancellationTokenSource.Token, true);
             }
 
-            scheduledTaskManager.Configure(scheduledTasks, CancellationToken);
+            PollingFeatureFetcher = new PollingFeatureFetcher(
+                settings,
+                scheduledTaskManager,
+                engine,
+                apiClient,
+                eventConfig,
+                backupManager,
+                settings.ThrowOnInitialFetchFail,
+                synchronousInitialization && !settings.ExperimentalUseStreaming,
+                CancellationToken,
+                backupResult.InitialETag,
+                HandleModeChange);
+            PollingFeatureFetcher.OnReady += OnHydrationSourceReadyHandler;
+
+            StreamingFeatureFetcher = new StreamingFeatureFetcher(
+                settings,
+                apiClient,
+                engine,
+                eventConfig,
+                backupManager,
+                HandleModeChange);
+            StreamingFeatureFetcher.OnReady += OnHydrationSourceReadyHandler;
+
+            try
+            {
+                if (settings.ExperimentalUseStreaming)
+                {
+                    Task.Run(() => StreamingFeatureFetcher.StartAsync().ConfigureAwait(false));
+                }
+                else
+                {
+                    PollingFeatureFetcher.Start();
+                }
+            }
+            catch (Exception)
+            {
+                Dispose();
+                throw;
+            }
         }
 
-        internal void OnReadyHandler(object sender, EventArgs e)
+        internal void OnHydrationSourceReadyHandler(object sender, EventArgs e)
         {
             var raiseReady = Interlocked.Exchange(ref ready, 1) == 0;
             if (raiseReady)
             {
                 // internal update first
-                OnReady?.Invoke(this, new EventArgs());
+                OnHydrated?.Invoke(this, new EventArgs());
                 EventConfig.RaiseReady(new ReadyEvent());
+            }
+        }
+
+        private void HandleModeChange(string newMode)
+        {
+            if (newMode == "polling")
+            {
+                Task.Run(() => StreamingFeatureFetcher.StopAsync().ConfigureAwait(false));
+                PollingFeatureFetcher.Start();
+            }
+            else if (newMode == "streaming")
+            {
+                PollingFeatureFetcher.Stop();
+                Task.Run(() => StreamingFeatureFetcher.StartAsync().ConfigureAwait(false));
             }
         }
 
@@ -190,18 +218,16 @@ namespace Unleash
             }
 
             engine?.Dispose();
-            if (scheduledTaskManager != null && !(scheduledTaskManager is SystemTimerScheduledTaskManager))
+            if (IsCustomScheduledTaskManager)
             {
                 Logger.Warn(() => $"UNLEASH: Disposing ScheduledTaskManager of type {scheduledTaskManager.GetType().Name}");
             }
 
-            if (FetchFeatureTogglesTask != null)
-            {
-                FetchFeatureTogglesTask.OnReady -= OnReadyHandler;
-            }
-
+            PollingFeatureFetcher.OnReady -= OnHydrationSourceReadyHandler;
+            PollingFeatureFetcher.Dispose();
+            StreamingFeatureFetcher.OnReady -= OnHydrationSourceReadyHandler;
+            StreamingFeatureFetcher.Dispose();
             scheduledTaskManager?.Dispose();
-            StreamingFeatureFetcher?.Dispose();
         }
     }
 }
