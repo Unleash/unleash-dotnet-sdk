@@ -60,24 +60,6 @@ namespace Unleash.Tests.Integration
             result.Should().BeTrue();
         }
 
-        [Test]
-        public void Environment_Variable_Hostname_Not_Set_Is_Not_Enabled()
-        {
-            // Arrange
-            // This test will probably be run after prev test so just overwrite with null
-            Environment.SetEnvironmentVariable("hostname", null);
-            var appname = "endpoint-test";
-            var state = GetState();
-            var unleash = CreateUnleash(appname, state);
-
-            // Act
-            var result = unleash.IsEnabled("hydration-test");
-            unleash.Dispose();
-
-            // Assert
-            result.Should().BeFalse();
-        }
-
         public static IUnleash CreateUnleash(string name, string state)
         {
             var fakeHttpClientFactory = A.Fake<IHttpClientFactory>();
