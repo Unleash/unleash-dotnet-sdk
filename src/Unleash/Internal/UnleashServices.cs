@@ -18,6 +18,11 @@ namespace Unleash
     {
         private static readonly ILog Logger = LogProvider.GetLogger(typeof(UnleashServices));
         private int ready = 0;
+        private static readonly TaskFactory TaskFactory =
+            new TaskFactory(CancellationToken.None,
+                          TaskCreationOptions.None,
+                          TaskContinuationOptions.None,
+                          TaskScheduler.Default);
 
         private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         private readonly IUnleashScheduledTaskManager scheduledTaskManager;
@@ -155,7 +160,8 @@ namespace Unleash
                 synchronousInitialization && !settings.ExperimentalUseStreaming,
                 CancellationToken,
                 backupResult.InitialETag,
-                HandleModeChange);
+                HandleModeChange,
+                TaskFactory);
             PollingFeatureFetcher.OnReady += OnHydrationSourceReadyHandler;
 
             StreamingFeatureFetcher = new StreamingFeatureFetcher(
@@ -171,7 +177,10 @@ namespace Unleash
             {
                 if (settings.ExperimentalUseStreaming)
                 {
-                    Task.Run(() => StreamingFeatureFetcher.StartAsync().ConfigureAwait(false));
+                    TaskFactory
+                        .StartNew(() => StreamingFeatureFetcher.StartAsync().ConfigureAwait(false))
+                        .GetAwaiter()
+                        .GetResult();
                 }
                 else
                 {

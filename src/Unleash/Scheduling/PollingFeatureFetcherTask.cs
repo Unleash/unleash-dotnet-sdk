@@ -11,11 +11,8 @@ namespace Unleash.Scheduling
     internal class PollingFeatureFetcher : IDisposable
     {
         private static readonly ILog Logger = LogProvider.GetLogger(typeof(PollingFeatureFetcher));
-        private static readonly TaskFactory TaskFactory =
-            new TaskFactory(CancellationToken.None,
-                          TaskCreationOptions.None,
-                          TaskContinuationOptions.None,
-                          TaskScheduler.Default);
+        private TaskFactory TaskFactory;
+
 
         public PollingFeatureFetcher(
             UnleashSettings settings,
@@ -28,11 +25,13 @@ namespace Unleash.Scheduling
             bool synchronousInitialization,
             CancellationToken cancellationToken,
             string backupResultInitialETag,
-            Action<string> modeChange
+            Action<string> modeChange,
+            TaskFactory taskFactory
         )
         {
             this.scheduledTaskManager = scheduledTaskManager;
             this.synchronousInitialization = synchronousInitialization;
+            this.TaskFactory = taskFactory;
             ModeChange = modeChange;
             fetchFeatureTogglesTask = new FetchFeatureTogglesTask(
                 engine,

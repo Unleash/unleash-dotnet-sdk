@@ -94,10 +94,10 @@ namespace Unleash.Streaming
                     OnReady?.Invoke(this, new EventArgs());
                 }
 
+                BackupManager.Save(new Backup(Engine.GetState(), null));
+
                 // now that the toggle collection has been updated, raise the toggles updated event if configured
                 EventConfig?.RaiseTogglesUpdated(new TogglesUpdatedEvent { UpdatedOn = DateTime.UtcNow });
-
-                BackupManager.Save(new Backup(Engine.GetState(), null));
             }
             catch (Exception ex)
             {

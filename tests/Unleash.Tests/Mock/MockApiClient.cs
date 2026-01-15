@@ -93,7 +93,6 @@ namespace Unleash.Tests.Mock
 
         public void StopStreaming()
         {
-            throw new NotImplementedException();
         }
     }
 }

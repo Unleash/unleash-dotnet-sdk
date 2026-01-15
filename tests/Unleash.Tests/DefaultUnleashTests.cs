@@ -62,7 +62,7 @@ namespace Unleash.Tests
             });
 
             A.CallTo(() => fakeHttpClientFactory.Create(A<Uri>._)).Returns(httpClient);
-            A.CallTo(() => fakeScheduler.ConfigureTask(A<IUnleashScheduledTask>._, A<CancellationToken>._, A<bool>._)).Invokes(action =>
+            A.CallTo(() => fakeScheduler.ConfigureTask(A<FetchFeatureTogglesTask>._, A<CancellationToken>._, A<bool>._)).Invokes(action =>
             {
                 var task = (IUnleashScheduledTask)action.Arguments[0];
                 task.ExecuteAsync((CancellationToken)action.Arguments[1]).Wait();
