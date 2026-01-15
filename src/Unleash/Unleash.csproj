@@ -51,7 +51,7 @@
     <PackageReference Include="LibLog" Version="4.2.6">
       <PrivateAssets>All</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Unleash.Yggdrasil" Version="1.1.1" />
+    <PackageReference Include="Unleash.Yggdrasil" Version="1.1.2" />
   </ItemGroup>
 
   <ItemGroup>
