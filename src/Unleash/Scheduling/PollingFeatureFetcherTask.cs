@@ -12,6 +12,11 @@ namespace Unleash.Scheduling
     {
         private static readonly ILog Logger = LogProvider.GetLogger(typeof(PollingFeatureFetcher));
         private TaskFactory TaskFactory;
+        private bool ready;
+        private readonly IUnleashScheduledTaskManager scheduledTaskManager;
+        private readonly bool synchronousInitialization;
+        private FetchFeatureTogglesTask fetchFeatureTogglesTask;
+        private Action<string> ModeChange { get; }
 
 
         public PollingFeatureFetcher(
@@ -52,7 +57,7 @@ namespace Unleash.Scheduling
 
         public void Start()
         {
-            if (synchronousInitialization)
+            if (synchronousInitialization && !ready)
             {
                 TaskFactory
                         .StartNew(() => fetchFeatureTogglesTask.ExecuteAsync(CancellationToken.None))
@@ -77,13 +82,8 @@ namespace Unleash.Scheduling
 
         private void HandleReady(object sender, EventArgs e)
         {
+            ready = true;
             OnReady?.Invoke(this, e);
         }
-
-        private readonly IUnleashScheduledTaskManager scheduledTaskManager;
-        private readonly bool synchronousInitialization;
-        private FetchFeatureTogglesTask fetchFeatureTogglesTask;
-
-        private Action<string> ModeChange { get; }
     }
 }
