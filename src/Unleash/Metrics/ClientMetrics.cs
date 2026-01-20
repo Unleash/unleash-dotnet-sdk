@@ -32,7 +32,7 @@ namespace Unleash.Metrics
         {
             get
             {
-                return UnleashServices.supportedSpecVersion;
+                return DefaultUnleash.supportedSpecVersion;
             }
         }
     }

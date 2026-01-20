@@ -27,17 +27,13 @@ namespace Unleash.Scheduling
         internal event EventHandler OnReady;
 
         public FetchFeatureTogglesTask(
-            YggdrasilEngine engine,
-            IUnleashApiClient apiClient,
-            EventCallbackConfig eventConfig,
-            IBackupManager backupManager,
-            bool throwOnInitialLoadFail)
+            UnleashConfig config)
         {
-            this.engine = engine;
-            this.apiClient = apiClient;
-            this.eventConfig = eventConfig;
-            this.backupManager = backupManager;
-            this.throwOnInitialLoadFail = throwOnInitialLoadFail;
+            this.engine = config.Engine;
+            this.apiClient = config.ApiClient;
+            this.eventConfig = config.EventConfig;
+            this.backupManager = config.BackupManager;
+            this.throwOnInitialLoadFail = config.ThrowOnInitialFetchFail;
         }
 
         public async Task ExecuteAsync(CancellationToken cancellationToken)

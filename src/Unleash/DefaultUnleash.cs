@@ -6,6 +6,9 @@ namespace Unleash
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading;
+    using System.Threading.Tasks;
+    using Unleash.Communication;
+    using Unleash.Scheduling;
     using Unleash.Strategies;
     using Unleash.Utilities;
 
@@ -13,6 +16,10 @@ namespace Unleash
     public class DefaultUnleash : IUnleash
     {
         private static readonly ILog Logger = LogProvider.GetLogger(typeof(DefaultUnleash));
+        private readonly string connectionId = Guid.NewGuid().ToString();
+        private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+        private UnleashConfig config;
+
 
         private static int InitializedInstanceCount = 0;
 
@@ -21,6 +28,10 @@ namespace Unleash
         private readonly UnleashSettings settings;
 
         internal readonly UnleashServices services;
+
+        internal readonly MetricsService metrics;
+
+        public const string supportedSpecVersion = "5.1.9";
 
         ///// <summary>
         ///// Initializes a new instance of Unleash client.
@@ -43,7 +54,9 @@ namespace Unleash
             var settingsValidator = new UnleashSettingsValidator();
             settingsValidator.Validate(settings);
 
-            services = new UnleashServices(settings, EventConfig, synchronousInitialization, strategies?.ToList());
+            config = GetUnleashConfig(settings, synchronousInitialization, EventConfig, strategies);
+            metrics = new MetricsService(config);
+            services = new UnleashServices(config, strategies?.ToList());
 
             Logger.Info(() => $"UNLEASH: Unleash instance number {currentInstanceNo} is initialized and configured with: {settings}");
 
@@ -65,7 +78,7 @@ namespace Unleash
         /// <inheritdoc />
         public bool IsEnabled(string toggleName, bool defaultSetting)
         {
-            return IsEnabled(toggleName, services.ContextProvider.Context, defaultSetting);
+            return IsEnabled(toggleName, config.ContextProvider.Context, defaultSetting);
         }
 
         public bool IsEnabled(string toggleName, UnleashContext context)
@@ -76,7 +89,7 @@ namespace Unleash
         public bool IsEnabled(string toggleName, UnleashContext context, bool defaultSetting)
         {
             var enhancedContext = context.ApplyStaticFields(settings);
-            var response = services.engine.IsEnabled(toggleName, enhancedContext);
+            var response = config.Engine.IsEnabled(toggleName, enhancedContext);
             var enabled = response.HasEnabled ? response.Enabled : defaultSetting;
 
             if (response.ImpressionData)
@@ -89,17 +102,17 @@ namespace Unleash
 
         public ICollection<ToggleDefinition> ListKnownToggles()
         {
-            return services.engine.ListKnownToggles().Select(ToggleDefinition.FromYggdrasilDef).ToList();
+            return config.Engine.ListKnownToggles().Select(ToggleDefinition.FromYggdrasilDef).ToList();
         }
 
         public Variant GetVariant(string toggleName)
         {
-            return GetVariant(toggleName, services.ContextProvider.Context, Variant.DISABLED_VARIANT);
+            return GetVariant(toggleName, config.ContextProvider.Context, Variant.DISABLED_VARIANT);
         }
 
         public Variant GetVariant(string toggleName, Variant defaultVariant)
         {
-            return GetVariant(toggleName, services.ContextProvider.Context, defaultVariant);
+            return GetVariant(toggleName, config.ContextProvider.Context, defaultVariant);
         }
 
         public Variant GetVariant(string toggleName, UnleashContext context)
@@ -111,8 +124,8 @@ namespace Unleash
         {
             var enhancedContext = context.ApplyStaticFields(settings);
 
-            var variant = services.engine.GetVariant(toggleName, enhancedContext) ?? defaultValue;
-            var enabled = services.engine.IsEnabled(toggleName, enhancedContext);
+            var variant = config.Engine.GetVariant(toggleName, enhancedContext) ?? defaultValue;
+            var enabled = config.Engine.IsEnabled(toggleName, enhancedContext);
             variant.FeatureEnabled = enabled.Enabled;
 
             if (enabled.ImpressionData)
@@ -121,6 +134,67 @@ namespace Unleash
             }
 
             return Variant.UpgradeVariant(variant);
+        }
+
+        private UnleashConfig GetUnleashConfig(
+            UnleashSettings settings,
+            bool synchronousInitialization,
+            EventCallbackConfig eventConfig,
+            params IStrategy[] strategies)
+        {
+            var taskFactory = new TaskFactory(CancellationToken.None,
+                          TaskCreationOptions.None,
+                          TaskContinuationOptions.None,
+                          TaskScheduler.Default);
+
+            var fileSystem = settings.FileSystem ?? new FileSystem(settings.Encoding);
+            var scheduledTaskManager = settings.ScheduledTaskManager ?? new SystemTimerScheduledTaskManager();
+            var yggdrasilStrategies = strategies?.Select(s => new CustomStrategyAdapter(s)).Cast<Yggdrasil.IStrategy>().ToList();
+            var apiClient = settings.UnleashApiClient ?? GetApiClient(connectionId, supportedSpecVersion, eventConfig);
+            return new UnleashConfig
+            {
+                ApiClient = apiClient,
+                BackupManager = new CachedFilesLoader(settings, eventConfig),
+                ContextProvider = settings.UnleashContextProvider,
+                Engine = new Yggdrasil.YggdrasilEngine(yggdrasilStrategies),
+                EventConfig = eventConfig,
+                FileSystem = fileSystem,
+                ScheduledTaskManager = scheduledTaskManager,
+                TaskFactory = taskFactory,
+                SynchronousInitialization = synchronousInitialization,
+                AppName = settings.AppName,
+                ExperimentalUseStreaming = settings.ExperimentalUseStreaming,
+                FetchTogglesInterval = settings.FetchTogglesInterval,
+                InstanceTag = settings.InstanceTag,
+                ScheduleFeatureToggleFetchImmediatly = settings.ScheduleFeatureToggleFetchImmediatly,
+                SdkVersion = settings.SdkVersion,
+                SendMetricsInterval = settings.SendMetricsInterval,
+                ThrowOnInitialFetchFail = settings.ThrowOnInitialFetchFail,
+                UnleashApi = settings.UnleashApi,
+                CancellationToken = cancellationTokenSource.Token
+            };
+        }
+
+        private IUnleashApiClient GetApiClient(string connectionId, string supportedSpecVersion, EventCallbackConfig eventConfig)
+        {
+            IUnleashApiClient apiClient;
+            var uri = settings.UnleashApi;
+            if (!uri.AbsolutePath.EndsWith("/"))
+            {
+                uri = new Uri($"{uri.AbsoluteUri}/");
+            }
+
+            var httpClient = settings.HttpClientFactory.Create(uri);
+            return new UnleashApiClient(httpClient, new UnleashApiClientRequestHeaders()
+            {
+                AppName = settings.AppName,
+                InstanceTag = settings.InstanceTag,
+                ConnectionId = connectionId,
+                SdkVersion = settings.SdkVersion,
+                CustomHttpHeaders = settings.CustomHttpHeaders,
+                CustomHttpHeaderProvider = settings.UnleashCustomHttpHeaderProvider,
+                SupportedSpecVersion = supportedSpecVersion
+            }, eventConfig, settings.ProjectId);
         }
 
         private void EmitImpressionEvent(string type, UnleashContext context, bool enabled, string name, string variant = null)
@@ -149,6 +223,11 @@ namespace Unleash
 
         public void Dispose()
         {
+            if (!cancellationTokenSource.IsCancellationRequested)
+            {
+                cancellationTokenSource.Cancel();
+            }
+
             services?.Dispose();
         }
     }

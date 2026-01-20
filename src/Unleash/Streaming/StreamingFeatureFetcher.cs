@@ -21,21 +21,21 @@ namespace Unleash.Streaming
 
         internal event EventHandler OnReady;
 
-        public StreamingFeatureFetcher(UnleashSettings settings, IUnleashApiClient apiClient, YggdrasilEngine engine, EventCallbackConfig eventConfig, IBackupManager backupManager, Action<string> modeChange)
+        public StreamingFeatureFetcher(UnleashConfig config, Action<string> modeChange)
         {
-            Settings = settings;
-            ApiClient = apiClient;
-            Engine = engine;
-            EventConfig = eventConfig;
-            BackupManager = backupManager;
+            this.UnleashApi = config.UnleashApi;
+            this.Engine = config.Engine;
+            this.EventConfig = config.EventConfig;
+            this.BackupManager = config.BackupManager;
+            this.ApiClient = config.ApiClient;
             ModeChange = modeChange;
         }
 
+        private Uri UnleashApi { get; set; }
         private YggdrasilEngine Engine { get; set; }
         private EventCallbackConfig EventConfig { get; set; }
         private IBackupManager BackupManager { get; set; }
         public Action<string> ModeChange { get; }
-        private UnleashSettings Settings { get; set; }
         private IUnleashApiClient ApiClient { get; set; }
 
         private async Task Reconnect()
@@ -48,7 +48,7 @@ namespace Unleash.Streaming
         {
             try
             {
-                var uri = Settings.UnleashApi;
+                var uri = UnleashApi;
                 if (!uri.AbsolutePath.EndsWith("/"))
                 {
                     uri = new Uri($"{uri.AbsoluteUri}/");

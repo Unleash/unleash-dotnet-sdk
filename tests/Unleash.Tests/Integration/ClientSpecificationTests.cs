@@ -30,7 +30,7 @@ namespace Unleash.Tests.Specifications
 
             using (var client = new HttpClient())
             {
-                var indexPath = $"https://raw.githubusercontent.com/Unleash/client-specification/v{UnleashServices.supportedSpecVersion}/specifications/";
+                var indexPath = $"https://raw.githubusercontent.com/Unleash/client-specification/v{DefaultUnleash.supportedSpecVersion}/specifications/";
                 var indexResponse = client.GetStringAsync(indexPath + "index.json").Result;
                 var indexFilePath = Path.Combine(specificationsPath, "index.json");
                 if (File.Exists(indexFilePath))

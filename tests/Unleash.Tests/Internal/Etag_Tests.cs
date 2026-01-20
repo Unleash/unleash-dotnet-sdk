@@ -46,13 +46,16 @@ namespace Unleash.Tests.Internal
 
             A.CallTo(() => fakeApiClient.FetchToggles("one", A<CancellationToken>._, false))
                 .Returns(Task.FromResult(new FetchTogglesResult { HasChanged = true, State = fetchState2, Etag = "two" }));
-
-            var engine = new YggdrasilEngine();
-
-            var callbackConfig = new EventCallbackConfig();
             var tokenSource = new CancellationTokenSource();
-            var backupManager = new NoOpBackupManager();
-            var task = new FetchFeatureTogglesTask(engine, fakeApiClient, callbackConfig, backupManager, false);
+            var config = new UnleashConfig
+            {
+                Engine = new YggdrasilEngine(),
+                EventConfig = new EventCallbackConfig(),
+                BackupManager = new NoOpBackupManager(),
+                CancellationToken = tokenSource.Token,
+                ApiClient = fakeApiClient,
+            };
+            var task = new FetchFeatureTogglesTask(config);
             Task.WaitAll(task.ExecuteAsync(tokenSource.Token));
 
             // Act

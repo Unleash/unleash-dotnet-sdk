@@ -41,8 +41,15 @@ namespace Unleash.Tests.Internal
             var engine = new YggdrasilEngine();
 
             var tokenSource = new CancellationTokenSource();
-            var backupManager = new NoOpBackupManager();
-            var task = new FetchFeatureTogglesTask(engine, fakeApiClient, callbackConfig, backupManager, false);
+            var config = new UnleashConfig
+            {
+                Engine = new YggdrasilEngine(),
+                EventConfig = callbackConfig,
+                BackupManager = new NoOpBackupManager(),
+                CancellationToken = tokenSource.Token,
+                ApiClient = fakeApiClient,
+            };
+            var task = new FetchFeatureTogglesTask(config);
 
             // Act
             Task.WaitAll(task.ExecuteAsync(tokenSource.Token));
@@ -64,12 +71,17 @@ namespace Unleash.Tests.Internal
             var fakeApiClient = A.Fake<IUnleashApiClient>();
             A.CallTo(() => fakeApiClient.FetchToggles(A<string>._, A<CancellationToken>._, false))
                 .Returns(Task.FromResult(new FetchTogglesResult { HasChanged = false, State = "", Etag = "one" }));
-
-            var engine = new YggdrasilEngine();
-
             var tokenSource = new CancellationTokenSource();
-            var backupManager = new NoOpBackupManager();
-            var task = new FetchFeatureTogglesTask(engine, fakeApiClient, callbackConfig, backupManager, false);
+            var config = new UnleashConfig
+            {
+                ApiClient = fakeApiClient,
+                Engine = new YggdrasilEngine(),
+                CancellationToken = tokenSource.Token,
+                BackupManager = new NoOpBackupManager(),
+                EventConfig = callbackConfig
+            };
+
+            var task = new FetchFeatureTogglesTask(config);
 
             // Act
             Task.WaitAll(task.ExecuteAsync(tokenSource.Token));
@@ -109,8 +121,15 @@ namespace Unleash.Tests.Internal
                 .Returns(Task.FromResult(new FetchTogglesResult { HasChanged = true, State = fetchState, Etag = "one" }));
 
             var tokenSource = new CancellationTokenSource();
-            var backupManager = new NoOpBackupManager();
-            var task = new FetchFeatureTogglesTask(engine, fakeApiClient, callbackConfig, backupManager, false);
+            var config = new UnleashConfig
+            {
+                Engine = engine,
+                EventConfig = callbackConfig,
+                BackupManager = new NoOpBackupManager(),
+                CancellationToken = tokenSource.Token,
+                ApiClient = fakeApiClient,
+            };
+            var task = new FetchFeatureTogglesTask(config);
 
             // Act
             Task.WaitAll(task.ExecuteAsync(tokenSource.Token));

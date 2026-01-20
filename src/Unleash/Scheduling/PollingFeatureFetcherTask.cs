@@ -20,34 +20,22 @@ namespace Unleash.Scheduling
 
 
         public PollingFeatureFetcher(
-            UnleashSettings settings,
-            IUnleashScheduledTaskManager scheduledTaskManager,
-            YggdrasilEngine engine,
-            IUnleashApiClient apiClient,
-            EventCallbackConfig eventConfig,
-            IBackupManager backupManager,
-            bool throwOnInitialLoadFail,
-            bool synchronousInitialization,
-            CancellationToken cancellationToken,
+            UnleashConfig config,
             string backupResultInitialETag,
-            Action<string> modeChange,
-            TaskFactory taskFactory
+            CancellationToken cancellationToken,
+            Action<string> modeChange
         )
         {
-            this.scheduledTaskManager = scheduledTaskManager;
-            this.synchronousInitialization = synchronousInitialization;
-            this.TaskFactory = taskFactory;
+            this.scheduledTaskManager = config.ScheduledTaskManager;
+            this.synchronousInitialization = config.SynchronousInitialization && !config.ExperimentalUseStreaming;
+            this.TaskFactory = config.TaskFactory;
             ModeChange = modeChange;
             fetchFeatureTogglesTask = new FetchFeatureTogglesTask(
-                engine,
-                apiClient,
-                eventConfig,
-                backupManager,
-                throwOnInitialLoadFail
+                config
             )
             {
-                ExecuteDuringStartup = settings.ScheduleFeatureToggleFetchImmediatly,
-                Interval = settings.FetchTogglesInterval,
+                ExecuteDuringStartup = config.ScheduleFeatureToggleFetchImmediatly,
+                Interval = config.FetchTogglesInterval,
                 Etag = backupResultInitialETag,
             };
             fetchFeatureTogglesTask.OnReady += HandleReady;

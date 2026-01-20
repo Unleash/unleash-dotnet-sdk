@@ -84,10 +84,16 @@ namespace Unleash.Tests.Internal
             A.CallTo(() => fakeApiClient.FetchToggles(A<string>._, A<CancellationToken>._, false))
                 .ThrowsAsync(() => new HttpRequestException("The remote server refused the connection"));
 
-            var engine = A.Fake<YggdrasilEngine>();
             var tokenSource = new CancellationTokenSource();
-            var backupManager = new NoOpBackupManager();
-            var task = new FetchFeatureTogglesTask(engine, fakeApiClient, callbackConfig, backupManager, false);
+            var config = new UnleashConfig
+            {
+                Engine = new YggdrasilEngine(),
+                EventConfig = callbackConfig,
+                BackupManager = new NoOpBackupManager(),
+                CancellationToken = tokenSource.Token,
+                ApiClient = fakeApiClient,
+            };
+            var task = new FetchFeatureTogglesTask(config);
 
             // Act
             try
