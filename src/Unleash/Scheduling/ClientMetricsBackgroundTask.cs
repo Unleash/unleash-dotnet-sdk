@@ -2,6 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Unleash.Communication;
+using Unleash.Internal;
 using Unleash.Logging;
 using Yggdrasil;
 
@@ -12,21 +13,18 @@ namespace Unleash.Scheduling
         private static readonly ILog Logger = LogProvider.GetLogger(typeof(ClientMetricsBackgroundTask));
         private readonly YggdrasilEngine engine;
         private readonly IUnleashApiClient apiClient;
-        private readonly UnleashSettings settings;
+        private TimeSpan? sendMetricsInterval;
 
-        public ClientMetricsBackgroundTask(
-            YggdrasilEngine engine,
-            IUnleashApiClient apiClient,
-            UnleashSettings settings)
+        public ClientMetricsBackgroundTask(UnleashConfig config)
         {
-            this.engine = engine;
-            this.apiClient = apiClient;
-            this.settings = settings;
+            this.engine = config.Engine;
+            this.apiClient = config.ApiClient;
+            this.sendMetricsInterval = config.SendMetricsInterval;
         }
 
         public async Task ExecuteAsync(CancellationToken cancellationToken)
         {
-            if (settings.SendMetricsInterval == null)
+            if (sendMetricsInterval == null)
                 return;
 
             var result = await apiClient.SendMetrics(engine.GetMetrics(), cancellationToken).ConfigureAwait(false);
