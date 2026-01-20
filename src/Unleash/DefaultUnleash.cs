@@ -54,7 +54,7 @@ namespace Unleash
             var settingsValidator = new UnleashSettingsValidator();
             settingsValidator.Validate(settings);
 
-            config = GetUnleashConfig(settings, synchronousInitialization, EventConfig, strategies);
+            config = BuildUnleashConfig(settings, synchronousInitialization, EventConfig, strategies);
             metrics = new MetricsService(config);
             services = new UnleashServices(config, strategies?.ToList());
 
@@ -136,7 +136,7 @@ namespace Unleash
             return Variant.UpgradeVariant(variant);
         }
 
-        private UnleashConfig GetUnleashConfig(
+        private UnleashConfig BuildUnleashConfig(
             UnleashSettings settings,
             bool synchronousInitialization,
             EventCallbackConfig eventConfig,
@@ -150,7 +150,7 @@ namespace Unleash
             var fileSystem = settings.FileSystem ?? new FileSystem(settings.Encoding);
             var scheduledTaskManager = settings.ScheduledTaskManager ?? new SystemTimerScheduledTaskManager();
             var yggdrasilStrategies = strategies?.Select(s => new CustomStrategyAdapter(s)).Cast<Yggdrasil.IStrategy>().ToList();
-            var apiClient = settings.UnleashApiClient ?? GetApiClient(connectionId, supportedSpecVersion, eventConfig);
+            var apiClient = settings.UnleashApiClient ?? BuildApiClient(connectionId, supportedSpecVersion, eventConfig);
             return new UnleashConfig
             {
                 ApiClient = apiClient,
@@ -175,9 +175,8 @@ namespace Unleash
             };
         }
 
-        private IUnleashApiClient GetApiClient(string connectionId, string supportedSpecVersion, EventCallbackConfig eventConfig)
+        private IUnleashApiClient BuildApiClient(string connectionId, string supportedSpecVersion, EventCallbackConfig eventConfig)
         {
-            IUnleashApiClient apiClient;
             var uri = settings.UnleashApi;
             if (!uri.AbsolutePath.EndsWith("/"))
             {
