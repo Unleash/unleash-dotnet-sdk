@@ -38,7 +38,7 @@ namespace Unleash
         internal UnleashServices(UnleashConfig config, List<Strategies.IStrategy> strategies = null)
         {
             EventConfig = config.EventConfig;
-            
+
             var backupResult = config.BackupManager.Load();
 
             if (!string.IsNullOrEmpty(backupResult.InitialState))

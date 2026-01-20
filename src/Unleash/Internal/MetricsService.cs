@@ -45,7 +45,7 @@ namespace Unleash.Internal
                 var clientMetricsBackgroundTask = new ClientMetricsBackgroundTask(config);
 
                 config.ScheduledTaskManager.ConfigureTask(clientMetricsBackgroundTask, config.CancellationToken, true);
-            }        
+            }
         }
     }
 }
