@@ -29,6 +29,7 @@ namespace Unleash.Streaming
             this.BackupManager = config.BackupManager;
             this.ApiClient = config.ApiClient;
             ModeChange = modeChange;
+            failoverStrategy = new StreamingFailoverStrategy(config.MaxFailuresUntilFailover, config.FailureWindowMs);
         }
 
         private Uri UnleashApi { get; set; }
@@ -37,6 +38,7 @@ namespace Unleash.Streaming
         private IBackupManager BackupManager { get; set; }
         public Action<string> ModeChange { get; }
         private IUnleashApiClient ApiClient { get; set; }
+        private StreamingFailoverStrategy failoverStrategy { get; }
 
         private async Task Reconnect()
         {
@@ -58,7 +60,7 @@ namespace Unleash.Streaming
             catch (Exception ex)
             {
                 EventConfig?.RaiseError(new ErrorEvent() { ErrorType = ErrorType.Client, Error = ex });
-                throw new UnleashException("Exception while starting streaming", ex);
+                Task.Run(() => this.Reconnect().ConfigureAwait(false));
             }
         }
 
@@ -109,8 +111,44 @@ namespace Unleash.Streaming
 
         public void HandleError(object target, ExceptionEventArgs data)
         {
+            FailEventArgs failEvent = null;
+
+            if (data.Exception is EventSourceServiceUnsuccessfulResponseException connectionException)
+            {
+                if (connectionException.Headers.Any(h => h.Key == "fetch-mode" && h.Value.Contains("polling")))
+                {
+                    failEvent = new ServerHintFailEventArgs { Hint = "polling" };
+                }
+                else
+                {
+                    failEvent = new HttpStatusFailEventArgs { StatusCode = connectionException.StatusCode };
+                }
+            }
+            else
+            {
+                failEvent = new NetworkEventErrorArgs();
+            }
+
             // Handle any errors that occur during streaming
             EventConfig?.RaiseError(new ErrorEvent() { ErrorType = ErrorType.Client, Error = data.Exception });
+            HandleFailoverDecision(failEvent);
+        }
+
+        public void HandleClosed(object target, StateChangedEventArgs data)
+        {
+            HandleFailoverDecision(new NetworkEventErrorArgs());
+        }
+
+        private void HandleFailoverDecision(FailEventArgs failEvent)
+        {
+            if (failoverStrategy.ShouldFailOver(failEvent))
+            {
+                ModeChange("polling");
+            }
+            else
+            {
+                Task.Run(() => this.Reconnect().ConfigureAwait(false));
+            }
         }
 
         public void Dispose()

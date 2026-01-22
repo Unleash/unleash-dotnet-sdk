@@ -275,6 +275,7 @@ namespace Unleash.Communication
             );
             EventSource.MessageReceived += streamingEventHandler.HandleMessage;
             EventSource.Error += streamingEventHandler.HandleError;
+            EventSource.Closed += StreamingEventHandler.HandleClosed;
             await EventSource.StartAsync().ConfigureAwait(false);
         }
 
@@ -285,6 +286,7 @@ namespace Unleash.Communication
 
             EventSource.MessageReceived -= StreamingEventHandler.HandleMessage;
             EventSource.Error -= StreamingEventHandler.HandleError;
+            EventSource.Closed -= StreamingEventHandler.HandleClosed;
             EventSource.Close();
             EventSource = null;
         }

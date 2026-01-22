@@ -10,7 +10,6 @@ namespace Unleash
     using Unleash.Communication;
     using Unleash.Scheduling;
     using Unleash.Strategies;
-    using Unleash.Utilities;
 
     /// <inheritdoc />
     public class DefaultUnleash : IUnleash
@@ -19,7 +18,6 @@ namespace Unleash
         private readonly string connectionId = Guid.NewGuid().ToString();
         private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         private UnleashConfig config;
-
 
         private static int InitializedInstanceCount = 0;
 
