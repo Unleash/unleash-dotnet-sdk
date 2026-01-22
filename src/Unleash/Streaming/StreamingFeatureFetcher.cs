@@ -18,6 +18,7 @@ namespace Unleash.Streaming
     {
         private static readonly ILog Logger = LogProvider.GetLogger(typeof(StreamingFeatureFetcher));
         private int ready = 0;
+        private TaskFactory TaskFactory;
 
         internal event EventHandler OnReady;
 
@@ -28,6 +29,7 @@ namespace Unleash.Streaming
             this.EventConfig = config.EventConfig;
             this.BackupManager = config.BackupManager;
             this.ApiClient = config.ApiClient;
+            this.TaskFactory = config.TaskFactory;
             ModeChange = modeChange;
             failoverStrategy = new StreamingFailoverStrategy(config.MaxFailuresUntilFailover, config.FailureWindowMs);
         }
@@ -60,7 +62,6 @@ namespace Unleash.Streaming
             catch (Exception ex)
             {
                 EventConfig?.RaiseError(new ErrorEvent() { ErrorType = ErrorType.Client, Error = ex });
-                Task.Run(() => this.Reconnect().ConfigureAwait(false));
             }
         }
 
@@ -101,11 +102,14 @@ namespace Unleash.Streaming
                 // now that the toggle collection has been updated, raise the toggles updated event if configured
                 EventConfig?.RaiseTogglesUpdated(new TogglesUpdatedEvent { UpdatedOn = DateTime.UtcNow });
             }
+            catch (YggdrasilEngineException ex)
+            {
+                Logger.Warn(() => $"UNLEASH: Yggdrasil engine exception while processing streaming event, re-connecting", ex);
+                Task.Run(() => this.Reconnect().ConfigureAwait(false));
+            }
             catch (Exception ex)
             {
-                Logger.Warn(() => $"UNLEASH: Error processing streaming event, re-connecting", ex);
-                EventConfig?.RaiseError(new ErrorEvent() { ErrorType = ErrorType.Client, Error = ex });
-                Task.Run(() => this.Reconnect().ConfigureAwait(false));
+                Logger.Warn(() => $"UNLEASH: Error processing streaming event", ex);
             }
         }
 
@@ -144,10 +148,6 @@ namespace Unleash.Streaming
             if (failoverStrategy.ShouldFailOver(failEvent))
             {
                 ModeChange("polling");
-            }
-            else
-            {
-                Task.Run(() => this.Reconnect().ConfigureAwait(false));
             }
         }
 
