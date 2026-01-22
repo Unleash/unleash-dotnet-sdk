@@ -33,7 +33,7 @@ namespace Unleash.Streaming
             switch (failEvent.Type)
             {
                 case FailEventType.Network:
-                    return true;
+                    return HasTooManyFails(failEvent, now.Value);
                 case FailEventType.HttpStatus:
                     var statusCode = (failEvent as HttpStatusFailEventArgs).StatusCode;
                     if (HARD_FAILOVER_STATUS_CODES.Contains(statusCode))
