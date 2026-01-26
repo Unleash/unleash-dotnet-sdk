@@ -216,7 +216,7 @@ public class StreamingFeatureFetcherTests
         var enabled = unleash.IsEnabled("deltaFeature");
 
         // Assert
-        Assert.That(streamingErrors, Is.EqualTo(6), "Updates not arrived");
+        Assert.That(streamingErrors, Is.EqualTo(5), "Updates not arrived");
         Assert.That(updated, Is.EqualTo(1), "Updates not arrived");
         Assert.That(pollingSent == true, "Polling endpoint not called");
         Assert.IsTrue(enabled, "Feature should be enabled after handling the message.");

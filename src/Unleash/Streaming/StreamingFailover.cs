@@ -59,7 +59,7 @@ namespace Unleash.Streaming
                     .ToList();
                 newList.Add(failEvent);
                 failEvents = newList;
-                return newList.Count > maxFailuresUntilFailover;
+                return newList.Count >= maxFailuresUntilFailover;
             }
         }
     }
