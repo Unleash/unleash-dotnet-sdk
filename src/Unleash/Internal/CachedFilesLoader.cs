@@ -34,11 +34,13 @@ namespace Unleash.Internal
         private static readonly ILog Logger = LogProvider.GetLogger(typeof(CachedFilesLoader));
         private readonly UnleashSettings settings;
         private readonly EventCallbackConfig eventCallbackConfig;
+        private readonly IFileSystem fileSystem;
 
-        internal CachedFilesLoader(UnleashSettings settings, EventCallbackConfig eventCallbackConfig)
+        internal CachedFilesLoader(UnleashSettings settings, EventCallbackConfig eventCallbackConfig, IFileSystem fileSystem)
         {
             this.settings = settings;
             this.eventCallbackConfig = eventCallbackConfig;
+            this.fileSystem = fileSystem;
         }
 
         public Backup Load()
@@ -84,8 +86,8 @@ namespace Unleash.Internal
         {
             try
             {
-                string toggleFileContent = settings.FileSystem.ReadAllText(GetFeatureToggleFilePath());
-                string etagFileContent = settings.FileSystem.ReadAllText(GetFeatureToggleETagFilePath());
+                string toggleFileContent = fileSystem.ReadAllText(GetFeatureToggleFilePath());
+                string etagFileContent = fileSystem.ReadAllText(GetFeatureToggleETagFilePath());
 
                 return new Backup(toggleFileContent, etagFileContent);
             }
@@ -100,8 +102,8 @@ namespace Unleash.Internal
         {
             try
             {
-                string toggleFileContent = settings.FileSystem.ReadAllText(GetLegacyFeatureToggleFilePath());
-                string etagFileContent = settings.FileSystem.ReadAllText(GetLegacyFeatureToggleETagFilePath());
+                string toggleFileContent = fileSystem.ReadAllText(GetLegacyFeatureToggleFilePath());
+                string etagFileContent = fileSystem.ReadAllText(GetLegacyFeatureToggleETagFilePath());
 
                 return new Backup(toggleFileContent, etagFileContent);
             }
@@ -119,26 +121,26 @@ namespace Unleash.Internal
 
             try
             {
-                using (var stream = settings.FileSystem.FileOpenCreate(tempPath))
-                using (var writer = new StreamWriter(stream, settings.FileSystem.Encoding))
+                using (var stream = fileSystem.FileOpenCreate(tempPath))
+                using (var writer = new StreamWriter(stream, fileSystem.Encoding))
                 {
                     writer.Write(content);
                     writer.Flush();
                     stream.Flush();
                 }
 
-                if (settings.FileSystem.FileExists(path))
+                if (fileSystem.FileExists(path))
                 {
-                    settings.FileSystem.Replace(tempPath, path, null);
+                    fileSystem.Replace(tempPath, path, null);
                 }
                 else
                 {
-                    settings.FileSystem.Move(tempPath, path);
+                    fileSystem.Move(tempPath, path);
                 }
             }
             catch (Exception)
             {
-                try { if (settings.FileSystem.FileExists(path)) settings.FileSystem.Delete(path); } catch { /* swallow */ }
+                try { if (fileSystem.FileExists(path)) fileSystem.Delete(path); } catch { /* swallow */ }
                 throw;
             }
         }

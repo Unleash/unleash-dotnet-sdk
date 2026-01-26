@@ -131,7 +131,7 @@ namespace Unleash.Tests.Internal
                 FileSystem = filesystem
             };
 
-            var filecache = new CachedFilesLoader(settings, callbackConfig);
+            var filecache = new CachedFilesLoader(settings, callbackConfig, filesystem);
 
             // Act
             filecache.Save(new Backup("{}", "etag"));
@@ -163,7 +163,7 @@ namespace Unleash.Tests.Internal
                 FileSystem = filesystem,
             };
 
-            var filecache = new CachedFilesLoader(settings, callbackConfig);
+            var filecache = new CachedFilesLoader(settings, callbackConfig, filesystem);
 
             // Act
             filecache.Load();
@@ -196,7 +196,7 @@ namespace Unleash.Tests.Internal
                 ToggleBootstrapProvider = toggleBootstrapProvider
             };
 
-            var filecache = new CachedFilesLoader(settings, callbackConfig);
+            var filecache = new CachedFilesLoader(settings, callbackConfig, filesystem);
 
             // Act
             filecache.Load();

@@ -81,7 +81,7 @@ namespace Unleash.Tests.Internal
                 FileSystem = fileSystem,
                 ToggleBootstrapProvider = bootstrapProviderFake
             };
-            var fileLoader = new CachedFilesLoader(settings, null);
+            var fileLoader = new CachedFilesLoader(settings, null, fileSystem);
 
             // Act
             var ensureResult = fileLoader.Load();
@@ -109,7 +109,7 @@ namespace Unleash.Tests.Internal
                 FileSystem = fileSystem,
                 ToggleBootstrapProvider = bootstrapProviderFake
             };
-            var fileLoader = new CachedFilesLoader(settings, null);
+            var fileLoader = new CachedFilesLoader(settings, null, fileSystem);
 
             // Act
             var ensureResult = fileLoader.Load();
@@ -137,7 +137,7 @@ namespace Unleash.Tests.Internal
                 ToggleBootstrapProvider = bootstrapProviderFake
             };
 
-            var fileLoader = new CachedFilesLoader(settings, null);
+            var fileLoader = new CachedFilesLoader(settings, null, fileSystem);
 
             // Act
             var ensureResult = fileLoader.Load();
@@ -161,7 +161,7 @@ namespace Unleash.Tests.Internal
                 ToggleBootstrapProvider = bootstrapProviderFake,
                 BootstrapOverride = false
             };
-            var fileLoader = new CachedFilesLoader(settings, null);
+            var fileLoader = new CachedFilesLoader(settings, null, fileSystem);
             fileSystem.WriteAllText(CachedFilesLoader.GetFeatureToggleFilePath(settings), "{}");
             fileSystem.WriteAllText(CachedFilesLoader.GetFeatureToggleETagFilePath(settings), "12345");
 
@@ -186,7 +186,7 @@ namespace Unleash.Tests.Internal
                 FileSystem = fileSystem,
                 ToggleBootstrapProvider = null
             };
-            var fileLoader = new CachedFilesLoader(settings, null);
+            var fileLoader = new CachedFilesLoader(settings, null, fileSystem);
             fileSystem.WriteAllText(CachedFilesLoader.GetFeatureToggleFilePath(settings), "{}");
             fileSystem.WriteAllText(CachedFilesLoader.GetFeatureToggleETagFilePath(settings), "12345");
 
@@ -211,7 +211,7 @@ namespace Unleash.Tests.Internal
                 FileSystem = fileSystem,
                 ToggleBootstrapProvider = bootstrapProviderFake
             };
-            var fileLoader = new CachedFilesLoader(settings, null);
+            var fileLoader = new CachedFilesLoader(settings, null, fileSystem);
             fileSystem.WriteAllText(CachedFilesLoader.GetFeatureToggleFilePath(settings), "{}");
             fileSystem.WriteAllText(CachedFilesLoader.GetFeatureToggleETagFilePath(settings), "12345");
 
