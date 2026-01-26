@@ -19,7 +19,7 @@ namespace Unleash.Tests.Internal
                 FileSystem = fileSystem,
 
             };
-            var fileLoader = new CachedFilesLoader(settings, null);
+            var fileLoader = new CachedFilesLoader(settings, null, fileSystem);
             fileSystem.WriteAllText(CachedFilesLoader.GetFeatureToggleETagFilePath(settings), "12345");
             fileSystem.WriteAllText(CachedFilesLoader.GetFeatureToggleFilePath(settings), "features");
 
@@ -40,7 +40,7 @@ namespace Unleash.Tests.Internal
             {
                 FileSystem = fileSystem
             };
-            var fileLoader = new CachedFilesLoader(settings, null);
+            var fileLoader = new CachedFilesLoader(settings, null, fileSystem);
 
             // Act
             var ensureResult = fileLoader.Load();
@@ -59,7 +59,7 @@ namespace Unleash.Tests.Internal
             {
                 FileSystem = fileSystem
             };
-            var fileLoader = new CachedFilesLoader(settings, null);
+            var fileLoader = new CachedFilesLoader(settings, null, fileSystem);
             fileSystem.WriteAllText(CachedFilesLoader.GetLegacyFeatureToggleETagFilePath(settings), "12345");
             fileSystem.WriteAllText(CachedFilesLoader.GetLegacyFeatureToggleFilePath(settings), "features");
 
@@ -80,7 +80,7 @@ namespace Unleash.Tests.Internal
             {
                 FileSystem = fileSystem
             };
-            var fileLoader = new CachedFilesLoader(settings, null);
+            var fileLoader = new CachedFilesLoader(settings, null, fileSystem);
 
             A.CallTo(() => fileSystem.WriteAllText(CachedFilesLoader.GetFeatureToggleFilePath(settings), A<string>._))
                 .Throws<IOException>();
@@ -99,7 +99,7 @@ namespace Unleash.Tests.Internal
             {
                 FileSystem = fileSystem
             };
-            var fileLoader = new CachedFilesLoader(settings, null);
+            var fileLoader = new CachedFilesLoader(settings, null, fileSystem);
 
             // Act
             fileLoader.Save(new Backup("features", "12345"));
