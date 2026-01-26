@@ -17,23 +17,18 @@ namespace Unleash.Streaming
         private List<FailEventArgs> failEvents = new List<FailEventArgs>();
         private object modifyFailEventsLock = new object();
 
-        public StreamingFailoverStrategy(int maxFailuresUntilFailover = 5, int failureWindowMs = 60_000)
+        public StreamingFailoverStrategy(int maxFailuresUntilFailover, int failureWindowMs)
         {
             this.maxFailuresUntilFailover = maxFailuresUntilFailover;
             this.failureWindowMs = failureWindowMs;
         }
 
-        public bool ShouldFailOver(FailEventArgs failEvent, DateTimeOffset? now = null)
+        public bool ShouldFailOver(FailEventArgs failEvent, DateTimeOffset now)
         {
-            if (now == null)
-            {
-                now = DateTimeOffset.UtcNow;
-            }
-
             switch (failEvent.Type)
             {
                 case FailEventType.Network:
-                    return HasTooManyFails(failEvent, now.Value);
+                    return HasTooManyFails(failEvent, now);
                 case FailEventType.HttpStatus:
                     var statusCode = (failEvent as HttpStatusFailEventArgs).StatusCode;
                     if (HARD_FAILOVER_STATUS_CODES.Contains(statusCode))
@@ -42,7 +37,7 @@ namespace Unleash.Streaming
                     }
                     else if (SOFT_FAILOVER_STATUS_CODES.Contains(statusCode))
                     {
-                        return HasTooManyFails(failEvent, now.Value);
+                        return HasTooManyFails(failEvent, now);
                     }
                     break;
                 case FailEventType.ServerHint:
@@ -54,13 +49,13 @@ namespace Unleash.Streaming
 
         private bool HasTooManyFails(FailEventArgs failEvent, DateTimeOffset now)
         {
-            var cutoff = now.AddMilliseconds(failureWindowMs * -1);
+            var cutoff = now.Subtract(TimeSpan.FromMilliseconds(failureWindowMs));
 
             // Copies elements from old list, then atomically replaces the list reference with the new list
             lock (modifyFailEventsLock)
             {
                 var newList = failEvents
-                    .Where(ev => ev.OccurredAt > cutoff)
+                    .Where(ev => ev.OccurredAt >= cutoff)
                     .ToList();
                 newList.Add(failEvent);
                 failEvents = newList;

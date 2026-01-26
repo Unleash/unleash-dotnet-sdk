@@ -145,7 +145,7 @@ namespace Unleash.Streaming
 
         private void HandleFailoverDecision(FailEventArgs failEvent)
         {
-            if (failoverStrategy.ShouldFailOver(failEvent))
+            if (failoverStrategy.ShouldFailOver(failEvent, DateTimeOffset.UtcNow))
             {
                 ModeChange("polling");
             }
