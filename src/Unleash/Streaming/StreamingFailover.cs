@@ -9,9 +9,9 @@ namespace Unleash.Streaming
 {
     internal class StreamingFailoverStrategy
     {
-        public static readonly string[] FAILOVER_SERVER_HINTS = new [] { "polling" };
-        public static readonly int[] HARD_FAILOVER_STATUS_CODES = new [] { 401, 403, 404, 429, 501 };
-        public static readonly int[] SOFT_FAILOVER_STATUS_CODES = new [] { 408, 500, 502, 503, 504 };
+        public static readonly string[] FAILOVER_SERVER_HINTS = new[] { "polling" };
+        public static readonly int[] HARD_FAILOVER_STATUS_CODES = new[] { 401, 403, 404, 429, 501 };
+        public static readonly int[] SOFT_FAILOVER_STATUS_CODES = new[] { 408, 500, 502, 503, 504 };
         private readonly int maxFailuresUntilFailover;
         private readonly int failureWindowMs;
         private List<FailEventArgs> failEvents = new List<FailEventArgs>();

@@ -8,7 +8,7 @@ namespace Unleash.Streaming
         HttpStatus,
         ServerHint
     }
-        
+
     internal abstract class FailEventArgs : EventArgs
     {
         public abstract FailEventType Type { get; }

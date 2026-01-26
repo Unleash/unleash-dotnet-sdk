@@ -12,12 +12,12 @@ namespace Unleash.Tests;
 
 public class StreamingFeatureFetcherTests
 {
-        private object GetPollingState()
+    private object GetPollingState()
+    {
+        return new
         {
-            return new
-            {
-                version = 2,
-                features = new [] {
+            version = 2,
+            features = new[] {
                     new {
                         name = "deltaFeature",
                         type = "release",
@@ -30,8 +30,8 @@ public class StreamingFeatureFetcherTests
                         impressionData = false
                     }
                 }
-            };
-        }
+        };
+    }
 
     [Test]
     public async Task Handles_Messages()
@@ -232,7 +232,8 @@ public class StreamingFeatureFetcherTests
         var sent = false;
         var client = GetStreamingTestServerClient(async context =>
         {
-            if (!sent) {
+            if (!sent)
+            {
                 sent = true;
                 await WriteEvents(context, 200, new List<ServerSentEvent>()
                 {
