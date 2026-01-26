@@ -140,7 +140,7 @@ namespace Unleash.Streaming
 
         public void HandleClosed(object target, StateChangedEventArgs data)
         {
-            HandleFailoverDecision(new NetworkEventErrorArgs());
+            Logger.Debug(() => "Connection closed");
         }
 
         private void HandleFailoverDecision(FailEventArgs failEvent)

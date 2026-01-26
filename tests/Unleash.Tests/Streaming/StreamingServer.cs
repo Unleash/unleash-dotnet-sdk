@@ -5,11 +5,14 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using System.Net.Http.Headers;
+using System.Security.Cryptography;
 
 namespace Unleash.Tests;
 
 internal static class StreamingServer
 {
+    internal static RandomNumberGenerator random = RandomNumberGenerator.Create();
+
     /// <summary>
     /// Creates a TestServer for SSE and polling and returns it
     /// </summary>
@@ -85,9 +88,9 @@ internal static class StreamingServer
         }
 
         context.Response.Headers["Content-Type"] = "text/event-stream";
+        context.Response.StatusCode = statusCode;
         for (var i = 0; i < events.Count; i++)
         {
-            context.Response.StatusCode = statusCode;
             await context.Response.WriteAsync($"event: {events[i].Name}\n");
             await context.Response.WriteAsync($"data: {events[i].Payload}\n");
             await context.Response.WriteAsync($"id: {events[i].Id}\n\n");
@@ -103,8 +106,10 @@ internal static class StreamingServer
     /// <returns>Async task that can be awaited</returns>
     public static async Task WriteState(HttpContext context, int statusCode, object state)
     {
+        byte[] rno = new byte[5];
+        random.GetBytes(rno);
         context.Response.StatusCode = statusCode;
-        context.Response.Headers.ETag = "\"etag:2:v1\"";
+        context.Response.Headers.ETag = $"\"etag:{BitConverter.ToInt32(rno, 0)}:v1\"";
         await context.Response.WriteAsJsonAsync(state);
     }
 }
