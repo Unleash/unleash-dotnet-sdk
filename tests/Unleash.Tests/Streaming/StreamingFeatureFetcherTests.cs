@@ -175,6 +175,7 @@ public class StreamingFeatureFetcherTests
         var streamingErrors = 0;
         var pollingSent = false;
         var updated = 0;
+        TaskCompletionSource updatesDone = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
         var server = GetStreamingPollingTestServer(
             async context =>
@@ -185,6 +186,7 @@ public class StreamingFeatureFetcherTests
             async context =>
             {
                 pollingSent = true;
+                updatesDone.SetResult();
                 await WriteState(context, 200, GetPollingState());
             }
         );
@@ -209,8 +211,8 @@ public class StreamingFeatureFetcherTests
             events.TogglesUpdatedEvent = ev => { updated++; };
         });
 
-        await Task.Delay(TimeSpan.FromMilliseconds(1000));
-
+        await updatesDone.Task;
+        await Task.Delay(100);
         var enabled = unleash.IsEnabled("deltaFeature");
 
         // Assert
