@@ -12,6 +12,7 @@ namespace Unleash.Streaming
     internal abstract class FailEventArgs : EventArgs
     {
         public abstract FailEventType Type { get; }
+        public string Message { get; set; }
         public DateTimeOffset OccurredAt { get; set; } = DateTimeOffset.UtcNow;
     }
 
