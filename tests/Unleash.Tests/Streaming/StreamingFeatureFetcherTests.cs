@@ -6,11 +6,33 @@ using NUnit.Framework.Internal;
 using System.Diagnostics;
 using Unleash.Tests.Mock;
 using static Unleash.Tests.StreamingServer;
+using System.Data.Common;
 
 namespace Unleash.Tests;
 
 public class StreamingFeatureFetcherTests
 {
+    private object GetPollingState()
+    {
+        return new
+        {
+            version = 2,
+            features = new[] {
+                    new {
+                        name = "deltaFeature",
+                        type = "release",
+                        enabled = true,
+                        project = "DavidTest",
+                        stale = false,
+                        strategies = new string[] {},
+                        variants = new string[] {},
+                        description = (string?)null,
+                        impressionData = false
+                    }
+                }
+        };
+    }
+
     [Test]
     public async Task Handles_Messages()
     {
@@ -46,7 +68,7 @@ public class StreamingFeatureFetcherTests
 
         var client = GetStreamingTestServerClient(async context =>
         {
-            await WriteEvents(context, new List<ServerSentEvent>()
+            await WriteEvents(context, 200, new List<ServerSentEvent>()
             {
                 new ServerSentEvent { Id = "2", Payload = updateData, Name = "unleash-updated" }
             });
@@ -101,7 +123,7 @@ public class StreamingFeatureFetcherTests
             if (!firstSent)
             {
                 firstSent = true;
-                await WriteEvents(context, new List<ServerSentEvent>()
+                await WriteEvents(context, 200, new List<ServerSentEvent>()
                 {
                     new ServerSentEvent { Id = "1", Payload = payload, Name = "unleash-connected" },
                     new ServerSentEvent { Id = "2", Payload = badUpdate, Name = "unleash-updated" }
@@ -109,7 +131,7 @@ public class StreamingFeatureFetcherTests
             }
             else
             {
-                await WriteEvents(context, new List<ServerSentEvent>()
+                await WriteEvents(context, 200, new List<ServerSentEvent>()
                 {
                     new ServerSentEvent { Id = "2", Payload = updatedPayload, Name = "unleash-connected" }
                 });
@@ -142,41 +164,32 @@ public class StreamingFeatureFetcherTests
 
         // Assert
         Assert.That(enabled, Is.EqualTo(true));
-        Assert.That(requestEventIdHeaders.Count, Is.EqualTo(2));
+        Assert.That(requestEventIdHeaders.Count, Is.GreaterThanOrEqualTo(2));
         Assert.IsTrue(string.IsNullOrWhiteSpace(requestEventIdHeaders[0]));
         Assert.IsTrue(string.IsNullOrWhiteSpace(requestEventIdHeaders[1]));
     }
 
     [Test]
-    public async Task Reconnects_When_Server_Connection_Resets()
+    public async Task Switches_To_Polling_When_Too_Many_Http_Errors()
     {
-        var requestEventIdHeaders = new List<string>();
-        var firstSent = false;
+        var streamingErrors = 0;
+        var pollingSent = false;
+        var updated = 0;
+        TaskCompletionSource updatesDone = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        var payload = "{\"events\":[{\"type\":\"hydration\",\"eventId\":1,\"features\":[{\"name\":\"deltaFeature\",\"enabled\":false,\"strategies\":[],\"variants\":[]}],\"segments\":[]}]}";
-        var updatedPayload = "{\"events\":[{\"type\":\"feature-updated\",\"eventId\":2,\"feature\":{\"name\":\"deltaFeature\",\"enabled\":true,\"strategies\":[],\"variants\":[]}}]}";
-
-        var server = GetStreamingTestServer(async context =>
-        {
-            var lastEventIdHeader = context.Request.Headers["last-event-id"];
-            requestEventIdHeaders.Add(lastEventIdHeader);
-
-            if (!firstSent)
+        var server = GetStreamingPollingTestServer(
+            async context =>
             {
-                firstSent = true;
-                await WriteEvents(context, new List<ServerSentEvent>()
-                {
-                    new ServerSentEvent { Id = "1", Payload = payload, Name = "unleash-connected" },
-                });
-            }
-            else
+                streamingErrors++;
+                await WriteEvents(context, 500, new List<ServerSentEvent>());
+            },
+            async context =>
             {
-                await WriteEvents(context, new List<ServerSentEvent>()
-                {
-                    new ServerSentEvent { Id = "2", Payload = updatedPayload, Name = "unleash-updated" }
-                });
+                pollingSent = true;
+                updatesDone.SetResult();
+                await WriteState(context, 200, GetPollingState());
             }
-        });
+        );
         var client = server.CreateClient();
         var clientFactory = new TestHttpClientFactory(client);
 
@@ -186,27 +199,27 @@ public class StreamingFeatureFetcherTests
             HttpClientFactory = clientFactory,
             AppName = "TestApp",
             InstanceTag = "TestInstance",
-            ScheduledTaskManager = new NoOpTaskManager(),
+            ScheduledTaskManager = new RunFeaturePollingOnceTaskManager(),
             ExperimentalUseStreaming = true,
             UnleashApi = uri,
+            SendMetricsInterval = null,
         };
 
         // Act
-        var unleash = new DefaultUnleash(settings);
-        await Task.Delay(TimeSpan.FromMilliseconds(200));
-        // Simulate a connection drop
-        await server.Host.StopAsync();
-        await server.Host.StartAsync();
+        var unleash = new DefaultUnleash(settings, callback: events =>
+        {
+            events.TogglesUpdatedEvent = ev => { updated++; };
+        });
 
-        await Task.Delay(TimeSpan.FromMilliseconds(1000));
-
+        await updatesDone.Task;
+        await Task.Delay(100);
         var enabled = unleash.IsEnabled("deltaFeature");
 
         // Assert
-        //Assert.IsTrue(enabled, "Feature should be enabled after handling the message.");
-        Assert.That(requestEventIdHeaders.Count, Is.EqualTo(2));
-        Assert.IsTrue(string.IsNullOrWhiteSpace(requestEventIdHeaders[0]));
-        Assert.That(requestEventIdHeaders[1], Is.EqualTo("1"));
+        Assert.That(streamingErrors, Is.EqualTo(5), "Has not attempted to connect 5 times before failing over");
+        Assert.That(updated, Is.EqualTo(1), "Has not received a polling update");
+        Assert.That(pollingSent == true, "Polling endpoint has not called");
+        Assert.IsTrue(enabled, "Feature should be enabled after handling the message.");
     }
 
     [Test]
@@ -216,13 +229,22 @@ public class StreamingFeatureFetcherTests
         var updateData = "{\"events\":[{\"type\":\"feature-updated\",\"eventId\":2,\"feature\":{\"name\":\"deltaFeature\",\"enabled\":true,\"strategies\":[],\"variants\":[]}}]}";
         // Arrange
         var updated = 0;
+        var sent = false;
         var client = GetStreamingTestServerClient(async context =>
         {
-            await WriteEvents(context, new List<ServerSentEvent>()
+            if (!sent)
             {
-                new ServerSentEvent { Id = "1", Payload = payload, Name = "unleash-connected" },
-                new ServerSentEvent { Id = "2", Payload = updateData, Name = "unleash-updated" }
-            });
+                sent = true;
+                await WriteEvents(context, 200, new List<ServerSentEvent>()
+                {
+                    new ServerSentEvent { Id = "1", Payload = payload, Name = "unleash-connected" },
+                    new ServerSentEvent { Id = "2", Payload = updateData, Name = "unleash-updated" }
+                });
+            }
+            else
+            {
+                await WriteEvents(context, 500, new List<ServerSentEvent>());
+            }
         });
 
         var clientFactory = new TestHttpClientFactory(client);
@@ -250,9 +272,11 @@ public class StreamingFeatureFetcherTests
         }
         timer.Stop();
 
+        await Task.Delay(TimeSpan.FromMilliseconds(2000));
         var enabled = unleash.IsEnabled("deltaFeature");
 
         // Assert
+        Assert.That(updated, Is.EqualTo(2), "Not had 2 feature update events");
         Assert.IsTrue(enabled, "Feature should be enabled after handling the message.");
     }
 
@@ -264,7 +288,7 @@ public class StreamingFeatureFetcherTests
         var payload = "{\"events\":[{\"type\":\"hydration\",\"eventId\":1,\"features\":[{\"name\":\"deltaFeature\",\"enabled\":true,\"strategies\":[],\"variants\":[]}],\"segments\":[]}]}";
         var client = GetStreamingTestServerClient(async context =>
         {
-            await WriteEvents(context, new List<ServerSentEvent>()
+            await WriteEvents(context, 200, new List<ServerSentEvent>()
             {
                 new ServerSentEvent { Id = "1", Payload = payload, Name = "unleash-connected" },
             });

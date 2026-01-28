@@ -28,5 +28,7 @@ namespace Unleash.Internal
         internal bool ScheduleFeatureToggleFetchImmediatly { get; set; }
         internal bool ThrowOnInitialFetchFail { get; set; }
         internal CancellationToken CancellationToken { get; set; }
+        internal int MaxFailuresUntilFailover { get; set; } = 5;
+        internal int FailureWindowMs { get; set; } = 60_000;
     }
 }

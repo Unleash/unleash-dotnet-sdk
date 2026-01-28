@@ -18,6 +18,7 @@ namespace Unleash.Streaming
     {
         private static readonly ILog Logger = LogProvider.GetLogger(typeof(StreamingFeatureFetcher));
         private int ready = 0;
+        private TaskFactory TaskFactory;
 
         internal event EventHandler OnReady;
 
@@ -28,7 +29,9 @@ namespace Unleash.Streaming
             this.EventConfig = config.EventConfig;
             this.BackupManager = config.BackupManager;
             this.ApiClient = config.ApiClient;
+            this.TaskFactory = config.TaskFactory;
             ModeChange = modeChange;
+            failoverStrategy = new StreamingFailoverStrategy(config.MaxFailuresUntilFailover, config.FailureWindowMs);
         }
 
         private Uri UnleashApi { get; set; }
@@ -37,6 +40,7 @@ namespace Unleash.Streaming
         private IBackupManager BackupManager { get; set; }
         public Action<string> ModeChange { get; }
         private IUnleashApiClient ApiClient { get; set; }
+        private StreamingFailoverStrategy failoverStrategy { get; }
 
         private async Task Reconnect()
         {
@@ -58,7 +62,6 @@ namespace Unleash.Streaming
             catch (Exception ex)
             {
                 EventConfig?.RaiseError(new ErrorEvent() { ErrorType = ErrorType.Client, Error = ex });
-                throw new UnleashException("Exception while starting streaming", ex);
             }
         }
 
@@ -75,6 +78,9 @@ namespace Unleash.Streaming
                 case "unleash-updated":
                     Logger.Debug(() => $"UNLEASH: Handling event '{data.EventName}'");
                     HandleStreamingUpdate(data.Message.Data);
+                    break;
+                case "fetch-mode":
+                    HandleModeChange(data);
                     break;
                 default:
                     Logger.Debug(() => $"UNLEASH: Ignoring unknown event type: {data.EventName}");
@@ -99,18 +105,65 @@ namespace Unleash.Streaming
                 // now that the toggle collection has been updated, raise the toggles updated event if configured
                 EventConfig?.RaiseTogglesUpdated(new TogglesUpdatedEvent { UpdatedOn = DateTime.UtcNow });
             }
+            catch (YggdrasilEngineException ex)
+            {
+                Logger.Warn(() => $"UNLEASH: Yggdrasil engine exception while processing streaming event, re-connecting", ex);
+                TaskFactory
+                    .StartNew(() => this.Reconnect().ConfigureAwait(false))
+                    .GetAwaiter()
+                    .GetResult();
+            }
             catch (Exception ex)
             {
-                Logger.Warn(() => $"UNLEASH: Error processing streaming event, re-connecting", ex);
-                EventConfig?.RaiseError(new ErrorEvent() { ErrorType = ErrorType.Client, Error = ex });
-                Task.Run(() => this.Reconnect().ConfigureAwait(false));
+                Logger.Warn(() => $"UNLEASH: Error processing streaming event", ex);
             }
         }
 
         public void HandleError(object target, ExceptionEventArgs data)
         {
-            // Handle any errors that occur during streaming
-            EventConfig?.RaiseError(new ErrorEvent() { ErrorType = ErrorType.Client, Error = data.Exception });
+            if (data.Exception is EventSourceServiceUnsuccessfulResponseException connectionException)
+            {
+                HandleFailoverDecision(new HttpStatusFailEventArgs
+                {
+                    StatusCode = connectionException.StatusCode,
+                    Message = data.Exception.Message
+                });
+            }
+            else
+            {
+                HandleFailoverDecision(new NetworkEventErrorArgs
+                {
+                    Message = data.Exception.Message
+                });
+            }
+        }
+
+        private void HandleModeChange(MessageReceivedEventArgs data)
+        {
+            if (data.Message.Data == "polling")
+            {
+                Logger.Debug(() => $"UNLEASH: Server hint received: '{data.Message.Data}'. Switching to polling");
+                HandleFailoverDecision(new ServerHintFailEventArgs
+                {
+                    Hint = "polling",
+                    OccurredAt = DateTimeOffset.UtcNow,
+                    Message = "Server has explicitly requested switching to polling mode"
+                });
+            }
+        }
+
+        public void HandleClosed(object target, StateChangedEventArgs data)
+        {
+            Logger.Debug(() => "Connection closed");
+        }
+
+        private void HandleFailoverDecision(FailEventArgs failEvent)
+        {
+            if (failoverStrategy.ShouldFailOver(failEvent, DateTimeOffset.UtcNow))
+            {
+                Logger.Warn(() => $"UNLEASH: Failing over to polling. {failEvent.Message}");
+                ModeChange("polling");
+            }
         }
 
         public void Dispose()
