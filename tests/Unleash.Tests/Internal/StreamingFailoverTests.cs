@@ -85,7 +85,7 @@ public class StreamingFailoverTests
         // Arrange
         var failoverStrategy = new StreamingFailoverStrategy(5, 1000);
         var now = DateTimeOffset.UtcNow;
-        
+
         // Act
         var result = failoverStrategy.ShouldFailOver(new HttpStatusFailEventArgs() { Message = "failed", StatusCode = 404, OccurredAt = now }, now);
 
@@ -103,7 +103,7 @@ public class StreamingFailoverTests
         var second = now.Subtract(TimeSpan.FromMilliseconds(40));
         var third = now.Subtract(TimeSpan.FromMilliseconds(30));
         var fourth = now.Subtract(TimeSpan.FromMilliseconds(20));
-        
+
         // Act
         var firstResult = failoverStrategy.ShouldFailOver(new HttpStatusFailEventArgs() { Message = "failed", StatusCode = 500, OccurredAt = first }, first);
         failoverStrategy.ShouldFailOver(new HttpStatusFailEventArgs() { Message = "failed", StatusCode = 500, OccurredAt = second }, second);
@@ -123,7 +123,7 @@ public class StreamingFailoverTests
         // Arrange
         var failoverStrategy = new StreamingFailoverStrategy(5, 1000);
         var now = DateTimeOffset.UtcNow;
-        
+
         // Act
         var result = failoverStrategy.ShouldFailOver(new ServerHintFailEventArgs() { Message = "failed", Hint = "polling", OccurredAt = now }, now);
 
@@ -137,7 +137,7 @@ public class StreamingFailoverTests
         // Arrange
         var failoverStrategy = new StreamingFailoverStrategy(5, 1000);
         var now = DateTimeOffset.UtcNow;
-        
+
         // Act
         var result = failoverStrategy.ShouldFailOver(new ServerHintFailEventArgs() { Message = "failed", Hint = "no-fail-over", OccurredAt = now }, now);
 
