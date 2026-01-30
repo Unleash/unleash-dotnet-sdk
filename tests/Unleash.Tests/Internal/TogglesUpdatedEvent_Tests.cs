@@ -4,7 +4,6 @@ using NUnit.Framework;
 using Unleash.Communication;
 using Unleash.Internal;
 using Unleash.Scheduling;
-using Unleash.Tests.Mock;
 using Yggdrasil;
 
 namespace Unleash.Tests.Internal

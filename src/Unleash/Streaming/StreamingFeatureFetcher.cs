@@ -2,7 +2,6 @@ using Unleash.Communication;
 using Yggdrasil;
 using LaunchDarkly.EventSource;
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 using Unleash.Internal;
 using Unleash.Events;

@@ -1,7 +1,5 @@
 ﻿using FluentAssertions;
 using NUnit.Framework;
-using System.Text;
-using Unleash.Internal;
 using Unleash.Tests.Mock;
 using Unleash.Utilities;
 

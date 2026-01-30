@@ -3,7 +3,6 @@ using NUnit.Framework;
 using System.Net;
 using System.Text;
 using static Unleash.Tests.Specifications.TestFactory;
-using Unleash.Tests.Mock;
 using Unleash.Scheduling;
 using Unleash.Internal;
 using Unleash.Events;

@@ -6,7 +6,6 @@ using System.Net;
 using System.Text;
 using static Unleash.Tests.Specifications.TestFactory;
 using Unleash.Tests.Mock;
-using Unleash.Internal;
 using Unleash.Scheduling;
 
 namespace Unleash.Tests.Integration

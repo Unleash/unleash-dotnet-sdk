@@ -1,4 +1,3 @@
-using System.Net;
 using FakeItEasy;
 using FluentAssertions;
 using NUnit.Framework;

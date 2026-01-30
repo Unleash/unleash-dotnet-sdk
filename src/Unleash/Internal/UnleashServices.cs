@@ -1,14 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Unleash.Communication;
 using Unleash.Events;
 using Unleash.Internal;
 using Unleash.Logging;
 using Unleash.Scheduling;
-using Unleash.Strategies;
 using Unleash.Streaming;
 using Yggdrasil;
 

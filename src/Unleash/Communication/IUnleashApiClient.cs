@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using LaunchDarkly.EventSource;
 using Unleash.Metrics;
 using Unleash.Streaming;
 

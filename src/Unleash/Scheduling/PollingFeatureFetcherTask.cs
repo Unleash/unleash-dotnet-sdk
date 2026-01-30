@@ -1,10 +1,8 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Unleash.Communication;
 using Unleash.Internal;
 using Unleash.Logging;
-using Yggdrasil;
 
 namespace Unleash.Scheduling
 {

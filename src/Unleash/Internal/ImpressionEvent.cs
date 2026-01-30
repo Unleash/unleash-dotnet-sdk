@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Unleash.Internal
+﻿namespace Unleash.Internal
 {
     public class ImpressionEvent
     {

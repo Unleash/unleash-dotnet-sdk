@@ -2,10 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
-using Unleash.Communication;
 using Unleash.Scheduling;
-using Yggdrasil;
 
 namespace Unleash.Internal
 {

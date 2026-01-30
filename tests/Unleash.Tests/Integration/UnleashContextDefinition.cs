@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace Unleash.Tests.Specifications
+﻿namespace Unleash.Tests.Specifications
 {
     public class UnleashContextDefinition
     {

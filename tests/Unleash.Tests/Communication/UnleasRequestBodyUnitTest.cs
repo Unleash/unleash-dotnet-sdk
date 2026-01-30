@@ -1,11 +1,9 @@
 ﻿using System.Net;
-using System.Net.Http;
 using System.Text.Json;
 using FluentAssertions;
 using NUnit.Framework;
 using Unleash.Communication;
 using Unleash.Metrics;
-using Unleash.Tests.Mock;
 using Yggdrasil;
 
 namespace Unleash.Tests.Communication

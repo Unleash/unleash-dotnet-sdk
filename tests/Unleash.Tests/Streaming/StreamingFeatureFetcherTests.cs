@@ -1,12 +1,9 @@
-using Unleash;
 using NUnit.Framework;
 using LaunchDarkly.EventSource;
-using Microsoft.AspNetCore.Http;
 using NUnit.Framework.Internal;
 using System.Diagnostics;
 using Unleash.Tests.Mock;
 using static Unleash.Tests.StreamingServer;
-using System.Data.Common;
 
 namespace Unleash.Tests;
 
