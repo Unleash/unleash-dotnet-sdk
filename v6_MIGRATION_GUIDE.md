@@ -77,3 +77,15 @@ await CreateClientAsync(settings, false, null, ...) // or CreateClientAsync(sett
 ## Changes to EventCallbackConfig
 
 The public method RaiseTogglesUpdated has been made internal
+
+## Changes to UnleashSettings
+
+### Removed APIs
+
+We've removed the UnleashSettings Environment property. It's sourced from the API token when available, but can also still be set on the UnleashContext where needed
+
+``` dotnet
+
+public string Environment { get; set; }
+
+```
