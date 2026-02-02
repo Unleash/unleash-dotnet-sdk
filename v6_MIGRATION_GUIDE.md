@@ -5,10 +5,12 @@ This guide highlights the key changes you should be aware of when upgrading to v
 
 ## Changes to IUnleashScheduledTaskManager APIs
 
-v6 changes how the SDK interacts with the Scheduled task manager. Instead of passing over control of all tasks, 
-the SDK has assumed that responsibility and now hands them over for configuration one by one with instructions 
-on whether or not to start the scheduling for the task right away. The SDK will during runtime invoke the Start 
-and Stop as needed.
+v6 changes how the SDK interacts with the Scheduled task manager. 
+If you have not implemented a custom scheduler this will not affect you.
+
+If you have implemented a custom scheduler that you've registered on the UnleashSettings when instantiating Unleash,
+take a look at the changed APIs below. Unleash .NET SDK now owns the responsibility for the tasks and interacts with 
+the scheduler when it needs the tasks configured, started, or stopped.
 
 ### Removed APIs
 
@@ -30,27 +32,26 @@ void Stop(IUnleashScheduledTask task);
 
 ## DefaultUnleash | IUnleash
 
-We've moved the event listener config to the construction of the Unleash instance. 
-This is so events triggered as Unleash is starting up are not missed. 
-This affects the public constructor of DefaultUnleash as well as the Unleash client factory
+The API to configure event listeners for emitted events (Impression events, ready, error etc) have been moved to 
+the constructor of DefaultUnleash to not miss events fired during initialization. If you were using this feature take a 
+look at the changed APIs below for how to update your implementation
+
+### Changed APIs
+
+``` dotnet
+
+public DefaultUnleash(UnleashSettings settings, Action<EventCallbackConfig> callback = null, params IStrategy[] strategies)
+
+// where the callback is a new parameter and optional, but if custom strategies are in use the parameter needs to be specified like this:
+new DefaultUnleash(settings, null, ...) // or new DefaultUnleash(settings, callback: null, ...)
+
+```
 
 ### Removed APIs
 
 ``` dotnet
 
 void ConfigureEvents(Action<EventCallbackConfig> callback)
-
-```
-
-### Changed APIs
-
-``` dotnet
-
-public DefaultUnleash(UnleashSettings settings, params IStrategy[] strategies)
-// becomes
-public DefaultUnleash(UnleashSettings settings, Action<EventCallbackConfig> callback = null, params IStrategy[] strategies)
-// where the callback is optional, but if custom strategies are in use the parameter needs to be specified like this:
-new DefaultUnleash(settings, null, ...) // or new DefaultUnleash(settings, callback: null, ...)
 
 ```
 
@@ -63,11 +64,9 @@ IUnleashClientFactory methods CreateClient and CreateClientAsync.
 
 ``` dotnet
 
-IUnleash CreateClient(UnleashSettings settings, bool synchronousInitialization = false, params IStrategy[] strategies);
-Task<IUnleash> CreateClientAsync(UnleashSettings settings, bool synchronousInitialization = false, params IStrategy[] strategies);
-// becomes
 IUnleash CreateClient(UnleashSettings settings, bool synchronousInitialization = false, Action<EventCallbackConfig> callback = null, params IStrategy[] strategies);
 Task<IUnleash> CreateClientAsync(UnleashSettings settings, bool synchronousInitialization = false, Action<EventCallbackConfig> callback = null, params IStrategy[] strategies);
+
 // where the callback is optional, but if custom strategies are in use the parameter needs to be specified like this:
 CreateClient(settings, false, null, ...) // or CreateClient(settings, callback: null, ...)
 await CreateClientAsync(settings, false, null, ...) // or CreateClientAsync(settings, callback: null, ...)
