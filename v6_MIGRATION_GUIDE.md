@@ -1,6 +1,11 @@
 # Migrating to Unleash-Client-Dotnet 6.0.0
 
-This guide highlights the key changes you should be aware of when upgrading to v6.0.0 of the Unleash client.
+This guide describes breaking changes in version 6.0.0 of the Unleash .NET SDK. 
+Follow this guide if you're upgrading from version 5.x and use any of the following features:
+- Custom scheduled task managers.
+- Event listeners.
+- The `UnleashClientFactory` class.
+- The `Environment` property on `UnleashSettings.`
 
 
 ## Changes to IUnleashScheduledTaskManager APIs
