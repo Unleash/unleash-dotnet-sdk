@@ -27,7 +27,7 @@ void Configure(IEnumerable<IUnleashScheduledTask> tasks, CancellationToken cance
 
 ### Added APIs
 
-``` dotnet
+``` csharp
 
 void ConfigureTask(IUnleashScheduledTask task, CancellationToken cancellationToken, bool start);
 void Start(IUnleashScheduledTask task);
