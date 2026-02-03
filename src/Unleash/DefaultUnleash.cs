@@ -29,6 +29,7 @@ namespace Unleash
         ///// </summary>
         ///// <param name="config">Unleash settings</param>
         ///// <param name="strategies">Custom strategies.</param>
+        [Obsolete("This API will change in version 6. Details can be found in the v6_MIGRATION_GUIDE.md in the SDK repository.", false)]
         public DefaultUnleash(UnleashSettings settings, params IStrategy[] strategies)
         {
             var currentInstanceNo = Interlocked.Increment(ref InitializedInstanceCount);
@@ -51,6 +52,7 @@ namespace Unleash
             }
         }
 
+        [Obsolete("This API has been removed and moved to constructor in version 6. Details can be found in the v6_MIGRATION_GUIDE.md in the SDK repository.", false)]
         private EventCallbackConfig EventConfig { get; } = new EventCallbackConfig();
 
         /// <inheritdoc />
