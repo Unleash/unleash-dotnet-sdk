@@ -67,7 +67,7 @@ IUnleashClientFactory methods CreateClient and CreateClientAsync.
 
 ### Changed APIs
 
-``` dotnet
+``` csharp
 
 IUnleash CreateClient(UnleashSettings settings, bool synchronousInitialization = false, Action<EventCallbackConfig> callback = null, params IStrategy[] strategies);
 Task<IUnleash> CreateClientAsync(UnleashSettings settings, bool synchronousInitialization = false, Action<EventCallbackConfig> callback = null, params IStrategy[] strategies);
