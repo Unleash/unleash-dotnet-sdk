@@ -49,7 +49,7 @@ namespace Unleash
         /// <summary>
         /// Sets the project to fetch feature toggles for.
         /// </summary>
-        [Obsolete("No longer supported in recent versions of Unleash, scope API token accordingly instead. Will be removed in the next major version", false)]
+        [Obsolete("Scope API token accordingly instead. Will be removed in a future major version", false)]
         public string ProjectId { get; set; } = null;
 
         /// <summary>
