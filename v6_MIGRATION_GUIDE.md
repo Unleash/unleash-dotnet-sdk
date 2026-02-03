@@ -43,7 +43,7 @@ look at the changed APIs below for how to update your implementation
 
 ### Changed APIs
 
-``` dotnet
+``` csharp
 
 public DefaultUnleash(UnleashSettings settings, Action<EventCallbackConfig> callback = null, params IStrategy[] strategies)
 
