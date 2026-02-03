@@ -75,7 +75,7 @@ await CreateClientAsync(settings, false, null, ...) // or CreateClientAsync(sett
 
 ## Changes to EventCallbackConfig
 
-The public method RaiseTogglesUpdated has been made internal
+The public methods RaiseTogglesUpdated and RaiseError have been made internal
 
 ## Changes to UnleashSettings
 
