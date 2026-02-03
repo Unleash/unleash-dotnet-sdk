@@ -54,7 +54,7 @@ new DefaultUnleash(settings, null, ...) // or new DefaultUnleash(settings, callb
 
 ### Removed APIs
 
-``` dotnet
+``` csharp
 
 void ConfigureEvents(Action<EventCallbackConfig> callback)
 
