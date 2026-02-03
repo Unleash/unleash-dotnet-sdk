@@ -11,7 +11,7 @@ Follow this guide if you're upgrading from version 5.x and use any of the follow
 ## Changes to IUnleashScheduledTaskManager APIs
 
 v6 changes how the SDK interacts with the Scheduled task manager. 
-If you have not implemented a custom scheduler this will not affect you.
+If you haven't implemented a custom scheduler, skip this section.
 
 If you have implemented a custom scheduler that you've registered on the UnleashSettings when instantiating Unleash,
 take a look at the changed APIs below. Unleash .NET SDK now owns the responsibility for the tasks and interacts with 
