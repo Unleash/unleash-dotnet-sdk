@@ -19,6 +19,7 @@ namespace Unleash.ClientFactory
         /// </summary>
         /// <param name="synchronousInitialization">If true, fetch and cache toggles before returning. If false, allow the unleash client schedule an initial poll of features in the background</param>
         /// <param name="strategies">Custom strategies, added in addtion to builtIn strategies.</param>
+        [Obsolete("This API will change in version 6. Details can be found in the v6_MIGRATION_GUIDE.md in the SDK repository.", false)]
         public IUnleash CreateClient(UnleashSettings settings, bool synchronousInitialization = false, params IStrategy[] strategies)
         {
             if (synchronousInitialization)
@@ -51,6 +52,7 @@ namespace Unleash.ClientFactory
         /// </summary>
         /// <param name="synchronousInitialization">If true, fetch and cache toggles before returning. If false, allow the unleash client schedule an initial poll of features in the background</param>
         /// <param name="strategies">Custom strategies, added in addtion to builtIn strategies.</param>
+        [Obsolete("This API will change in version 6. Details can be found in the v6_MIGRATION_GUIDE.md in the SDK repository.", false)]
         public async Task<IUnleash> CreateClientAsync(UnleashSettings settings, bool synchronousInitialization = false, params IStrategy[] strategies)
         {
             if (synchronousInitialization)

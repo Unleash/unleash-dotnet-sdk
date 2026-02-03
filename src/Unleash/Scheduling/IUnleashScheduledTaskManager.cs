@@ -15,6 +15,7 @@ namespace Unleash.Scheduling
         /// </summary>
         /// <param name="tasks">Tasks to be executed</param>
         /// <param name="cancellationToken">Cancellation token which will be passed during shutdown (Dispose).</param>
+        [Obsolete("This API will change in version 6. Details can be found in the v6_MIGRATION_GUIDE.md in the SDK repository.", false)]
         void Configure(IEnumerable<IUnleashScheduledTask> tasks, CancellationToken cancellationToken);
     }
 }
