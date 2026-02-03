@@ -19,7 +19,7 @@ the scheduler when it needs the tasks configured, started, or stopped.
 
 ### Removed APIs
 
-``` dotnet
+``` csharp
 
 void Configure(IEnumerable<IUnleashScheduledTask> tasks, CancellationToken cancellationToken);
 
