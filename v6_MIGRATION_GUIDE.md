@@ -10,12 +10,7 @@ Follow this guide if you're upgrading from version 5.x and use any of the follow
 
 ## Changes to IUnleashScheduledTaskManager APIs
 
-v6 changes how the SDK interacts with the Scheduled task manager. 
-If you haven't implemented a custom scheduler, skip this section.
-
-If you have implemented a custom scheduler that you've registered on the UnleashSettings when instantiating Unleash,
-take a look at the changed APIs below. Unleash .NET SDK now owns the responsibility for the tasks and interacts with 
-the scheduler when it needs the tasks configured, started, or stopped.
+If you registered a custom scheduler on `UnleashSettings` when instantiating Unleash, review the changed APIs below. The Unleash .NET SDK now owns responsibility for the tasks and interacts with the scheduler when it needs the tasks configured, started, or stopped.
 
 ### Removed APIs
 
@@ -37,9 +32,7 @@ void Stop(IUnleashScheduledTask task);
 
 ## DefaultUnleash | IUnleash
 
-The API to configure event listeners for emitted events (Impression events, ready, error etc) have been moved to 
-the constructor of DefaultUnleash to not miss events fired during initialization. If you were using this feature take a 
-look at the changed APIs below for how to update your implementation
+The event listener configuration API has moved to the `DefaultUnleash` constructor to prevent missing [events](https://docs.getunleash.io/concepts/impression-data) fired during initialization. If you use this feature, review the changed APIs below to update your implementation.
 
 ### Changed APIs
 
@@ -47,7 +40,12 @@ look at the changed APIs below for how to update your implementation
 
 public DefaultUnleash(UnleashSettings settings, Action<EventCallbackConfig> callback = null, params IStrategy[] strategies)
 
-// where the callback is a new parameter and optional, but if custom strategies are in use the parameter needs to be specified like this:
+````
+
+The `callback` parameter is new and optional. If you use custom strategies, specify the callback parameter explicitly:
+
+```csharp
+
 new DefaultUnleash(settings, null, ...) // or new DefaultUnleash(settings, callback: null, ...)
 
 ```
@@ -62,8 +60,7 @@ void ConfigureEvents(Action<EventCallbackConfig> callback)
 
 ## Changes to IUnleashClientFactory APIs
 
-Matching the changes made to DefaultUnleash | IUnleash we've also added the callback as an optional parameter to the 
-IUnleashClientFactory methods CreateClient and CreateClientAsync.
+To match the changes made to `DefaultUnleash`, the `callback` parameter has been added as an optional parameter to the `IUnleashClientFactory` methods `CreateClient` and `CreateClientAsync`.
 
 ### Changed APIs
 
@@ -72,7 +69,7 @@ IUnleashClientFactory methods CreateClient and CreateClientAsync.
 IUnleash CreateClient(UnleashSettings settings, bool synchronousInitialization = false, Action<EventCallbackConfig> callback = null, params IStrategy[] strategies);
 Task<IUnleash> CreateClientAsync(UnleashSettings settings, bool synchronousInitialization = false, Action<EventCallbackConfig> callback = null, params IStrategy[] strategies);
 
-// where the callback is optional, but if custom strategies are in use the parameter needs to be specified like this:
+// The `callback` parameter is optional. If you use custom strategies, specify the callback parameter explicitly:
 CreateClient(settings, false, null, ...) // or CreateClient(settings, callback: null, ...)
 await CreateClientAsync(settings, false, null, ...) // or CreateClientAsync(settings, callback: null, ...)
 
@@ -80,13 +77,7 @@ await CreateClientAsync(settings, false, null, ...) // or CreateClientAsync(sett
 
 ## Changes to EventCallbackConfig
 
-The public methods RaiseTogglesUpdated and RaiseError have been made internal
-
-## Changes to UnleashSettings
-
-### Removed APIs
-
-We've removed the UnleashSettings Environment property. It's sourced from the API token when available, but can also still be set on the UnleashContext where needed
+The `RaiseTogglesUpdated` and `RaiseError` methods are now internal.The `Environment` property has been removed from `UnleashSettings`. The SDK sources this value from the API token when available. If you need to set the environment explicitly, set it on `UnleashContext` instead.
 
 ``` csharp
 
