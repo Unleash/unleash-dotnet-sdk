@@ -41,7 +41,6 @@ namespace Unleash.Tests
             // Act
             var enhancedContext = context.ApplyStaticFields(new UnleashSettings
             {
-                Environment = "stage",
                 AppName = "someapp"
             });
 
@@ -49,7 +48,6 @@ namespace Unleash.Tests
             enhancedContext.UserId.Should().Be("test@gmail.com");
             enhancedContext.SessionId.Should().Be("123");
             enhancedContext.RemoteAddress.Should().Be("127.0.0.1");
-            enhancedContext.Environment.Should().Be("stage");
             enhancedContext.AppName.Should().Be("someapp");
             enhancedContext.Properties["test"].Should().Be("me");
         }
@@ -70,7 +68,6 @@ namespace Unleash.Tests
             // Act
             var enhancedContext = context.ApplyStaticFields(new UnleashSettings
             {
-                Environment = "stage",
                 AppName = "someapp"
             });
 
@@ -103,6 +100,46 @@ namespace Unleash.Tests
             var value = context.GetByName("currentTime");
             var parsedValue = DateTimeOffset.Parse(value);
             parsedValue.Should().BeLessThan(TimeSpan.FromSeconds(1)).Before(DateTimeOffset.UtcNow);
+        }
+
+        [Test]
+        public void GetTokenEnvironment_Locates_Environment_In_Api_Token()
+        {
+            var context = new UnleashContext();
+            var token = "*:production.asdasdads";
+            var settings = new UnleashSettings()
+            {
+                CustomHttpHeaders = new Dictionary<string, string>()
+                {
+                    { "Authorization", token }
+                }
+            };
+            var environment = context.GetTokenEnvironment(settings);
+            environment.Should().Be("production");
+        }
+
+        [Test]
+        public void GetTokenEnvironment_Returns_Null_When_No_Token()
+        {
+            var context = new UnleashContext();
+            var settings = new UnleashSettings()
+            {
+                CustomHttpHeaders = new Dictionary<string, string>()
+                {
+                    { "Authorization", "token" }
+                }
+            };
+            var environment = context.GetTokenEnvironment(settings);
+            environment.Should().Be("default");
+        }
+
+        [Test]
+        public void GetTokenEnvironment_Returns_Null_For_Different_Format_Token()
+        {
+            var context = new UnleashContext();
+            var settings = new UnleashSettings();
+            var environment = context.GetTokenEnvironment(settings);
+            environment.Should().Be("default");
         }
     }
 }

@@ -36,12 +36,6 @@ namespace Unleash
         public string AppName { get; set; } = "my-awesome-app";
 
         /// <summary>
-        /// Gets or sets an environment. Used for communication with backend api.
-        /// </summary>
-        [Obsolete("No longer supported in recent versions of Unleash, scope API token accordingly instead. Will be removed in the next major version", false)]
-        public string Environment { get; set; } = "default";
-
-        /// <summary>
         /// Gets or sets an instance tag. Used for communication with backend api.
         /// </summary>
         public string InstanceTag { get; set; } = GetDefaultInstanceTag();
