@@ -37,7 +37,7 @@ namespace Unleash.Scheduling
         }
 
         public string Name => "report-metrics-task";
-        public TimeSpan Interval { get; set; }
+        public TimeSpan Interval { get { return sendMetricsInterval ?? default; } }
         public bool ExecuteDuringStartup { get; set; }
     }
 }
