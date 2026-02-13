@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 using LaunchDarkly.EventSource;
@@ -208,6 +209,55 @@ namespace Unleash.Communication
                     Logger.Trace(() => $"UNLEASH: Error {response.StatusCode} from request '{requestUri}' in '{nameof(UnleashApiClient)}': " + error);
                     eventConfig?.RaiseError(new ErrorEvent() { Resource = requestUri, ErrorType = ErrorType.Client, StatusCode = response.StatusCode });
 
+                    return false;
+                }
+            }
+        }
+
+        public async Task<bool> SendMetrics(string metrics, CancellationToken cancellationToken)
+        {
+            if (metricsRequestsToSkip > metricsRequestsSkipped)
+            {
+                metricsRequestsSkipped++;
+                return false;
+            }
+
+            metricsRequestsSkipped = 0;
+
+            const string requestUri = "client/metrics";
+
+            var clientMetrics = new ClientMetrics
+            {
+                AppName = clientRequestHeaders.AppName,
+                InstanceId = clientRequestHeaders.InstanceTag,
+                ConnectionId = clientRequestHeaders.ConnectionId,
+                Bucket = new Yggdrasil.MetricsBucket(new Dictionary<string, Yggdrasil.FeatureCount>(), DateTimeOffset.UtcNow, DateTimeOffset.UtcNow)
+            };
+
+            var sendMetricsNode = JsonSerializer.SerializeToNode(clientMetrics, options);
+            var metricsNode = JsonNode.Parse(metrics);
+
+            if (metricsNode["metrics"] != null)
+            {
+                sendMetricsNode["bucket"] = JsonNode.Parse(metricsNode["metrics"].ToJsonString(options));
+            }
+
+            sendMetricsNode["impactMetrics"] = JsonNode.Parse(metricsNode["impact_metrics"]?.ToJsonString(options) ?? "[]");
+
+            using (var request = new HttpRequestMessage(HttpMethod.Post, requestUri))
+            {
+                request.Content = new StringContent(sendMetricsNode.ToJsonString(options), Encoding.UTF8, "application/json");
+                SetRequestHeaders(request, clientRequestHeaders);
+                request.Headers.TryAddWithoutValidation("Unleash-Interval", clientRequestHeaders.SendMetricsInterval.TotalMilliseconds.ToString());
+                using (var response = await httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false))
+                {
+                    if (response.IsSuccessStatusCode || response.StatusCode == HttpStatusCode.NotModified)
+                    {
+                        HandleMetricsSuccessResponse(response);
+                        return true;
+                    }
+
+                    await HandleMetricsErrorResponse(response, requestUri);
                     return false;
                 }
             }
