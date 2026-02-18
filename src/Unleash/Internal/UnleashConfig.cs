@@ -10,6 +10,7 @@ namespace Unleash.Internal
     internal class UnleashConfig
     {
         internal string AppName { get; set; }
+        internal string Environment { get; set; }
         internal string InstanceTag { get; set; }
         internal string SdkVersion { get; set; }
         internal Uri UnleashApi { get; set; }

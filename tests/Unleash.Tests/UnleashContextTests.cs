@@ -105,7 +105,6 @@ namespace Unleash.Tests
         [Test]
         public void GetTokenEnvironment_Locates_Environment_In_Api_Token()
         {
-            var context = new UnleashContext();
             var token = "*:production.asdasdads";
             var settings = new UnleashSettings()
             {
@@ -114,14 +113,13 @@ namespace Unleash.Tests
                     { "Authorization", token }
                 }
             };
-            var environment = context.GetTokenEnvironment(settings);
+            var environment = UnleashContext.GetTokenEnvironment(settings);
             environment.Should().Be("production");
         }
 
         [Test]
         public void GetTokenEnvironment_Returns_Null_When_No_Token()
         {
-            var context = new UnleashContext();
             var settings = new UnleashSettings()
             {
                 CustomHttpHeaders = new Dictionary<string, string>()
@@ -129,16 +127,15 @@ namespace Unleash.Tests
                     { "Authorization", "token" }
                 }
             };
-            var environment = context.GetTokenEnvironment(settings);
+            var environment = UnleashContext.GetTokenEnvironment(settings);
             environment.Should().Be("default");
         }
 
         [Test]
         public void GetTokenEnvironment_Returns_Null_For_Different_Format_Token()
         {
-            var context = new UnleashContext();
             var settings = new UnleashSettings();
-            var environment = context.GetTokenEnvironment(settings);
+            var environment = UnleashContext.GetTokenEnvironment(settings);
             environment.Should().Be("default");
         }
     }
