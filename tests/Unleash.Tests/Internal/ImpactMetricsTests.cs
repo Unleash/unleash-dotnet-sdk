@@ -30,7 +30,8 @@ namespace Unleash.Tests.Internal.ImpactMetrics
             };
         }
 
-        HttpClient GetMetricsHttpClient(Func<HttpContext, Task> requestAction) {
+        HttpClient GetMetricsHttpClient(Func<HttpContext, Task> requestAction)
+        {
             return new TestServer(new WebHostBuilder()
             .ConfigureServices(services =>
                 {
@@ -95,7 +96,7 @@ namespace Unleash.Tests.Internal.ImpactMetrics
                 return;
             });
 
-            var enabled = config.Engine.IsEnabled("toggle-1", new Context());
+            //var enabled = config.Engine.IsEnabled("toggle-1", new Context());
             var metricsTask = new ClientMetricsBackgroundTask(config);
             var impactMetrics = new Unleash.Internal.ImpactMetrics(config);
 
@@ -105,7 +106,7 @@ namespace Unleash.Tests.Internal.ImpactMetrics
             impactMetrics.DefineGauge("temperature", "Current temperature");
             impactMetrics.UpdateGauge("temperature", 23.5);
 
-            impactMetrics.DefineHistogram("latency", "Request latency", new [] { 0.1, 0.5, 1.0 });
+            impactMetrics.DefineHistogram("latency", "Request latency", new[] { 0.1, 0.5, 1.0 });
             impactMetrics.ObserveHistogram("latency", 0.3);
             await metricsTask.ExecuteAsync(config.CancellationToken).ConfigureAwait(false);
             var body = await updatesDone.Task.ConfigureAwait(false);
@@ -120,6 +121,71 @@ namespace Unleash.Tests.Internal.ImpactMetrics
 
             Assert.AreEqual(expectedPayload!.ToJsonString(options), metrics!.ToJsonString(options));
             */
+        }
+
+        [Test]
+        public async Task Returns_Metrics_To_Engine_On_Failed_Send()
+        {
+            var expected_labels = @"{ ""environment"": ""production"", ""appName"": ""my-test-app"" }";
+            var expectedPayload = JsonNode.Parse(
+                @"
+                    [
+                        {
+                            ""name"": ""purchases"",
+                            ""help"": ""Number of purchases"",
+                            ""type"": ""counter"",
+                            ""samples"": [{ ""labels"":  " + expected_labels + @", ""value"": 3 }]
+                        }
+                    ]");
+
+            TaskCompletionSource<string> updatesDone = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+            int called = 0;
+            var actions = new Func<HttpContext, Task>[]
+            {
+                async context =>
+                    {
+                        context.Response.StatusCode = 429;
+                        await context.Response.WriteAsync("").ConfigureAwait(false);
+                        await context.Response.CompleteAsync().ConfigureAwait(false);
+                        return;
+                    },
+                async context =>
+                    {
+                        using var streamReader = new StreamReader(context.Request.Body);
+                        updatesDone.SetResult(await streamReader.ReadToEndAsync().ConfigureAwait(false));
+                        context.Response.StatusCode = 200;
+                        await context.Response.WriteAsync("").ConfigureAwait(false);
+                        await context.Response.CompleteAsync().ConfigureAwait(false);
+                        return;
+                    }
+            };
+            var config = GetConfig(async context =>
+                    {
+                        await actions[called](context);
+                        called++;
+                        return;
+                    }
+            );
+
+            var metricsTask = new ClientMetricsBackgroundTask(config);
+            var impactMetrics = new Unleash.Internal.ImpactMetrics(config);
+
+            impactMetrics.DefineCounter("purchases", "Number of purchases");
+            impactMetrics.IncrementCounter("purchases", 1);
+            impactMetrics.IncrementCounter("purchases", 1);
+            try
+            {
+                await metricsTask.ExecuteAsync(config.CancellationToken).ConfigureAwait(false);
+            }
+            catch { }
+            impactMetrics.IncrementCounter("purchases", 1);
+            await metricsTask.ExecuteAsync(config.CancellationToken).ConfigureAwait(false);
+            // The above call fails before it starts due to metrics backoff
+            await metricsTask.ExecuteAsync(config.CancellationToken).ConfigureAwait(false);
+
+            var body = await updatesDone.Task.ConfigureAwait(false);
+            var metrics = JsonNode.Parse(body)!["impactMetrics"]!;
+            Assert.True(JsonNode.DeepEquals(expectedPayload, metrics));
         }
     }
 }

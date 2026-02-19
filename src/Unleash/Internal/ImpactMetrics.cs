@@ -1,10 +1,11 @@
 using System.Collections.Generic;
 
-namespace Unleash.Internal {
+namespace Unleash.Internal
+{
     internal class ImpactMetrics : IImpactMetrics
     {
         private readonly UnleashConfig config;
-        private readonly Dictionary<string,string> baseLabels;
+        private readonly Dictionary<string, string> baseLabels;
 
         internal ImpactMetrics(UnleashConfig config)
         {
