@@ -46,7 +46,6 @@ namespace Unleash.Tests.Integration
         public void Environment_Variable_Hostname_Is_Set_Is_Enabled()
         {
             // Arrange
-            Environment.SetEnvironmentVariable("hostname", "unit-test");
             var appname = "endpoint-test";
             var state = GetState();
             var unleash = CreateUnleash(appname, state);

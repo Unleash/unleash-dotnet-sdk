@@ -54,7 +54,7 @@ namespace Unleash
             return this;
         }
 
-        internal string GetTokenEnvironment(UnleashSettings settings)
+        internal static string GetTokenEnvironment(UnleashSettings settings)
         {
             settings.CustomHttpHeaders.TryGetValue("Authorization", out var token);
             if (string.IsNullOrEmpty(token) || !token.Contains(":") || !token.Contains("."))

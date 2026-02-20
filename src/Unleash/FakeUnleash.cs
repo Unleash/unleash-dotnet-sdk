@@ -77,6 +77,7 @@ namespace Unleash
           toggles.Keys.Select(name => new ToggleDefinition(name, "Default", "SomeType")).ToList();
 
         public void ConfigureEvents(Action<EventCallbackConfig> config) { }
+        public IImpactMetrics ImpactMetrics { get; set; }
 
         public void Dispose() { }
     }

@@ -53,6 +53,7 @@ namespace Unleash
             settingsValidator.Validate(settings);
 
             config = BuildUnleashConfig(settings, synchronousInitialization, EventConfig, strategies);
+            ImpactMetrics = new ImpactMetrics(config);
             metrics = new MetricsService(config);
             services = new UnleashServices(config, strategies?.ToList());
 
@@ -66,6 +67,8 @@ namespace Unleash
         }
 
         private EventCallbackConfig EventConfig { get; } = new EventCallbackConfig();
+
+        public IImpactMetrics ImpactMetrics { get; }
 
         /// <inheritdoc />
         public bool IsEnabled(string toggleName)
@@ -152,6 +155,7 @@ namespace Unleash
             return new UnleashConfig
             {
                 ApiClient = apiClient,
+                Environment = UnleashContext.GetTokenEnvironment(settings),
                 BackupManager = new CachedFilesLoader(settings, eventConfig, fileSystem),
                 ContextProvider = settings.UnleashContextProvider,
                 Engine = new Yggdrasil.YggdrasilEngine(yggdrasilStrategies),

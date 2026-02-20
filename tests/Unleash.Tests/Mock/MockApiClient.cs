@@ -86,6 +86,11 @@ namespace Unleash.Tests.Mock
             return Task.FromResult(true);
         }
 
+        public Task<bool> SendMetrics(string metrics, CancellationToken cancellationToken)
+        {
+            return Task.FromResult(true);
+        }
+
         public Task StartStreamingAsync(Uri apiUri, StreamingFeatureFetcher streamingEventHandler)
         {
             throw new NotImplementedException();
