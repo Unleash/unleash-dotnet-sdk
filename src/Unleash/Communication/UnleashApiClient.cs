@@ -235,7 +235,7 @@ namespace Unleash.Communication
             };
 
             var sendMetricsNode = JsonSerializer.SerializeToNode(clientMetrics, options);
-            var metricsNode = JsonNode.Parse(metrics);
+            var metricsNode = JsonNode.Parse(string.IsNullOrEmpty(metrics) ? "{}" : metrics);
 
             if (metricsNode["metrics"] != null)
             {
@@ -247,46 +247,6 @@ namespace Unleash.Communication
             using (var request = new HttpRequestMessage(HttpMethod.Post, requestUri))
             {
                 request.Content = new StringContent(sendMetricsNode.ToJsonString(options), Encoding.UTF8, "application/json");
-                SetRequestHeaders(request, clientRequestHeaders);
-                request.Headers.TryAddWithoutValidation("Unleash-Interval", clientRequestHeaders.SendMetricsInterval.TotalMilliseconds.ToString());
-                using (var response = await httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false))
-                {
-                    if (response.IsSuccessStatusCode || response.StatusCode == HttpStatusCode.NotModified)
-                    {
-                        HandleMetricsSuccessResponse(response);
-                        return true;
-                    }
-
-                    await HandleMetricsErrorResponse(response, requestUri);
-                    return false;
-                }
-            }
-        }
-
-        public async Task<bool> SendMetrics(Yggdrasil.MetricsBucket metrics, CancellationToken cancellationToken)
-        {
-            if (metricsRequestsToSkip > metricsRequestsSkipped)
-            {
-                metricsRequestsSkipped++;
-                return false;
-            }
-
-            metricsRequestsSkipped = 0;
-
-            const string requestUri = "client/metrics";
-
-            var clientMetrics = new ClientMetrics
-            {
-                AppName = clientRequestHeaders.AppName,
-                InstanceId = clientRequestHeaders.InstanceTag,
-                ConnectionId = clientRequestHeaders.ConnectionId,
-                Bucket = metrics ?? new Yggdrasil.MetricsBucket(new Dictionary<string, Yggdrasil.FeatureCount>(), DateTimeOffset.UtcNow, DateTimeOffset.UtcNow)
-            };
-
-            using (var request = new HttpRequestMessage(HttpMethod.Post, requestUri))
-            {
-                request.Content = new StringContent(JsonSerializer.Serialize(clientMetrics, options), Encoding.UTF8, "application/json");
-
                 SetRequestHeaders(request, clientRequestHeaders);
                 request.Headers.TryAddWithoutValidation("Unleash-Interval", clientRequestHeaders.SendMetricsInterval.TotalMilliseconds.ToString());
                 using (var response = await httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false))

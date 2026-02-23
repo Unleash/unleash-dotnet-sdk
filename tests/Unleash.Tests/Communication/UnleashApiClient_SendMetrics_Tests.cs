@@ -28,7 +28,7 @@ namespace Unleash.Tests.Communication
             var engine = new YggdrasilEngine();
             engine.IsEnabled("someTestToggle", new Context());
 
-            var result = await client.SendMetrics(engine.GetMetrics(), CancellationToken.None);
+            var result = await client.SendMetrics(engine.CollectMetricsBucket(), CancellationToken.None);
             Assert.IsTrue(result);
         }
     }

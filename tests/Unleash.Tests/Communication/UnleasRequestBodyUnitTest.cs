@@ -58,7 +58,7 @@ namespace Unleash.Tests.Communication
         public async Task Should_Send_Correct_ConnectionId_In_Body_When_Sending_Metrics_And_Registering()
         {
             var engine = new YggdrasilEngine();
-            var metricsResult = await _apiClient.SendMetrics(engine.GetMetrics(), CancellationToken.None);
+            var metricsResult = await _apiClient.SendMetrics(engine.CollectMetricsBucket(), CancellationToken.None);
             var registerResult = await _apiClient.RegisterClient(new ClientRegistration(), CancellationToken.None);
 
             _messageHandler.Calls.Count.Should().Be(2);
