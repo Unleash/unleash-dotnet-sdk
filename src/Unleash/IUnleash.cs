@@ -77,5 +77,10 @@ namespace Unleash
         /// </summary>
         /// <returns>A list of metadata about known feature flags</returns>
         ICollection<ToggleDefinition> ListKnownToggles();
+
+        /// <summary>
+        /// Impact metrics interface for defining and recording custom metrics
+        /// </summary>
+        IImpactMetrics ImpactMetrics { get; }
     }
 }

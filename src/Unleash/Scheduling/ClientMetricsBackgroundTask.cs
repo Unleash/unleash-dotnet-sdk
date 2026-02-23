@@ -27,12 +27,19 @@ namespace Unleash.Scheduling
             if (sendMetricsInterval == null)
                 return;
 
-            var result = await apiClient.SendMetrics(engine.GetMetrics(), cancellationToken).ConfigureAwait(false);
+            var bucket = engine.CollectMetricsBucket();
 
-            // Ignore return value    
-            if (!result)
+            try
             {
-                // Logged elsewhere.
+                if (!await apiClient.SendMetrics(bucket, cancellationToken).ConfigureAwait(false))
+                {
+                    engine.RestoreMetrics(bucket);
+                }
+            }
+            catch (Exception)
+            {
+                engine.RestoreMetrics(bucket);
+                throw;
             }
         }
 

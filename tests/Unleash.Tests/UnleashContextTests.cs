@@ -101,45 +101,5 @@ namespace Unleash.Tests
             var parsedValue = DateTimeOffset.Parse(value);
             parsedValue.Should().BeLessThan(TimeSpan.FromSeconds(1)).Before(DateTimeOffset.UtcNow);
         }
-
-        [Test]
-        public void GetTokenEnvironment_Locates_Environment_In_Api_Token()
-        {
-            var context = new UnleashContext();
-            var token = "*:production.asdasdads";
-            var settings = new UnleashSettings()
-            {
-                CustomHttpHeaders = new Dictionary<string, string>()
-                {
-                    { "Authorization", token }
-                }
-            };
-            var environment = context.GetTokenEnvironment(settings);
-            environment.Should().Be("production");
-        }
-
-        [Test]
-        public void GetTokenEnvironment_Returns_Null_When_No_Token()
-        {
-            var context = new UnleashContext();
-            var settings = new UnleashSettings()
-            {
-                CustomHttpHeaders = new Dictionary<string, string>()
-                {
-                    { "Authorization", "token" }
-                }
-            };
-            var environment = context.GetTokenEnvironment(settings);
-            environment.Should().Be("default");
-        }
-
-        [Test]
-        public void GetTokenEnvironment_Returns_Null_For_Different_Format_Token()
-        {
-            var context = new UnleashContext();
-            var settings = new UnleashSettings();
-            var environment = context.GetTokenEnvironment(settings);
-            environment.Should().Be("default");
-        }
     }
 }

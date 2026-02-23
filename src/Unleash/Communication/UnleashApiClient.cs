@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 using LaunchDarkly.EventSource;
@@ -213,7 +214,7 @@ namespace Unleash.Communication
             }
         }
 
-        public async Task<bool> SendMetrics(Yggdrasil.MetricsBucket metrics, CancellationToken cancellationToken)
+        public async Task<bool> SendMetrics(string metrics, CancellationToken cancellationToken)
         {
             if (metricsRequestsToSkip > metricsRequestsSkipped)
             {
@@ -230,13 +231,22 @@ namespace Unleash.Communication
                 AppName = clientRequestHeaders.AppName,
                 InstanceId = clientRequestHeaders.InstanceTag,
                 ConnectionId = clientRequestHeaders.ConnectionId,
-                Bucket = metrics ?? new Yggdrasil.MetricsBucket(new Dictionary<string, Yggdrasil.FeatureCount>(), DateTimeOffset.UtcNow, DateTimeOffset.UtcNow)
+                Bucket = new Yggdrasil.MetricsBucket(new Dictionary<string, Yggdrasil.FeatureCount>(), DateTimeOffset.UtcNow, DateTimeOffset.UtcNow)
             };
+
+            var sendMetricsNode = JsonSerializer.SerializeToNode(clientMetrics, options);
+            var metricsNode = JsonNode.Parse(string.IsNullOrEmpty(metrics) ? "{}" : metrics);
+
+            if (metricsNode["metrics"] != null)
+            {
+                sendMetricsNode["bucket"] = JsonNode.Parse(metricsNode["metrics"].ToJsonString(options));
+            }
+
+            sendMetricsNode["impactMetrics"] = JsonNode.Parse(metricsNode["impact_metrics"]?.ToJsonString(options) ?? "[]");
 
             using (var request = new HttpRequestMessage(HttpMethod.Post, requestUri))
             {
-                request.Content = new StringContent(JsonSerializer.Serialize(clientMetrics, options), Encoding.UTF8, "application/json");
-
+                request.Content = new StringContent(sendMetricsNode.ToJsonString(options), Encoding.UTF8, "application/json");
                 SetRequestHeaders(request, clientRequestHeaders);
                 request.Headers.TryAddWithoutValidation("Unleash-Interval", clientRequestHeaders.SendMetricsInterval.TotalMilliseconds.ToString());
                 using (var response = await httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false))

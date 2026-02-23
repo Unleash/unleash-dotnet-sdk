@@ -137,6 +137,24 @@ namespace Unleash
         /// </summary>
         internal bool DisableSingletonWarning { get; set; } = false;
 
+        internal string GetTokenEnvironment()
+        {
+            CustomHttpHeaders.TryGetValue("Authorization", out var token);
+            if (UnleashCustomHttpHeaderProvider.CustomHeaders.TryGetValue("Authorization", out var providerToken))
+            {
+                token = providerToken;
+            }
+
+            if (string.IsNullOrEmpty(token) || !token.Contains(":") || !token.Contains("."))
+            {
+                return "default";
+            }
+
+            return token.Split(':', '.')[1];
+        }
+
+
+
         private static string GetSdkVersion()
         {
             var assemblyName = Assembly.GetExecutingAssembly().GetName();

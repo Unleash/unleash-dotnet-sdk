@@ -24,6 +24,11 @@ internal class StubbedApiClient : IUnleashApiClient
         return Task.FromResult(true);
     }
 
+    public Task<bool> SendMetrics(string metrics, CancellationToken cancellationToken)
+    {
+        return Task.FromResult(true);
+    }
+
     public Task StartStreamingAsync(Uri apiUri, StreamingFeatureFetcher streamingEventHandler)
     {
         StreamingEventHandler = streamingEventHandler;

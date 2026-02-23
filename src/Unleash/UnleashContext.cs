@@ -49,20 +49,9 @@ namespace Unleash
 
         public UnleashContext ApplyStaticFields(UnleashSettings settings)
         {
-            Environment = string.IsNullOrEmpty(Environment) ? GetTokenEnvironment(settings) : Environment;
+            Environment = string.IsNullOrEmpty(Environment) ? settings.GetTokenEnvironment() : Environment;
             AppName = string.IsNullOrEmpty(AppName) ? settings.AppName : AppName;
             return this;
-        }
-
-        internal string GetTokenEnvironment(UnleashSettings settings)
-        {
-            settings.CustomHttpHeaders.TryGetValue("Authorization", out var token);
-            if (string.IsNullOrEmpty(token) || !token.Contains(":") || !token.Contains("."))
-            {
-                return "default";
-            }
-
-            return token.Split(':', '.')[1];
         }
 
         internal static Builder New()

@@ -96,7 +96,7 @@ namespace Unleash.Tests.Communication
             var etag = "";
             await api.FetchToggles(etag, CancellationToken.None);
             await api.RegisterClient(new Unleash.Metrics.ClientRegistration(), CancellationToken.None);
-            await api.SendMetrics(engine.GetMetrics(), CancellationToken.None);
+            await api.SendMetrics(engine.CollectMetricsBucket(), CancellationToken.None);
 
             messageHandler.calls.Count.Should().Be(3);
             foreach (var call in messageHandler.calls)
@@ -127,7 +127,7 @@ namespace Unleash.Tests.Communication
             var etag = "";
             await api.FetchToggles(etag, CancellationToken.None);
             await api.RegisterClient(new Unleash.Metrics.ClientRegistration(), CancellationToken.None);
-            await api.SendMetrics(engine.GetMetrics(), CancellationToken.None);
+            await api.SendMetrics(engine.CollectMetricsBucket(), CancellationToken.None);
 
             messageHandler.calls.Count.Should().Be(3);
             foreach (var call in messageHandler.calls)
@@ -146,7 +146,7 @@ namespace Unleash.Tests.Communication
             var etag = "";
             await api.FetchToggles(etag, CancellationToken.None);
             await api.RegisterClient(new Unleash.Metrics.ClientRegistration(), CancellationToken.None);
-            await api.SendMetrics(engine.GetMetrics(), CancellationToken.None);
+            await api.SendMetrics(engine.CollectMetricsBucket(), CancellationToken.None);
 
             messageHandler.calls.Count.Should().Be(3);
 
