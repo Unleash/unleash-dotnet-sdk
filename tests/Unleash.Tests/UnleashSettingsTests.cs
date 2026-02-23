@@ -5,7 +5,7 @@ namespace Unleash.Tests
 {
     internal class HeaderProvider : IUnleashCustomHttpHeaderProvider
     {
-        public Dictionary<string, string> CustomHeaders { get; }= new Dictionary<string, string>() { ["Authorization"] = "*:production.asdasdads" };
+        public Dictionary<string, string> CustomHeaders { get; } = new Dictionary<string, string>() { ["Authorization"] = "*:production.asdasdads" };
     }
 
     public class UnleashSettingsTests
