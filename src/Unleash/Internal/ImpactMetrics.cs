@@ -36,7 +36,7 @@ namespace Unleash.Internal
             return new Dictionary<string, string>
             {
                 ["appName"] = config.AppName,
-                ["environment"] = config.Environment()
+                ["environment"] = config.CurrentEnvironment()
             };
         }
     }

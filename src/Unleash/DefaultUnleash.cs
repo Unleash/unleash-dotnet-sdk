@@ -155,7 +155,7 @@ namespace Unleash
             return new UnleashConfig
             {
                 ApiClient = apiClient,
-                Environment = () => settings.GetTokenEnvironment(),
+                CurrentEnvironment = () => settings.GetTokenEnvironment(),
                 BackupManager = new CachedFilesLoader(settings, eventConfig, fileSystem),
                 ContextProvider = settings.UnleashContextProvider,
                 Engine = new Yggdrasil.YggdrasilEngine(yggdrasilStrategies),

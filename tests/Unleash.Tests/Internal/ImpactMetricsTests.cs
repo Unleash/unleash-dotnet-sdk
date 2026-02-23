@@ -26,7 +26,7 @@ namespace Unleash.Tests.Internal.ImpactMetrics
                 ApiClient = new UnleashApiClient(client, new UnleashApiClientRequestHeaders(), new EventCallbackConfig()),
                 CancellationToken = new CancellationTokenSource().Token,
                 SendMetricsInterval = TimeSpan.FromSeconds(1),
-                Environment = () => "production"
+                CurrentEnvironment = () => "production"
             };
         }
 
