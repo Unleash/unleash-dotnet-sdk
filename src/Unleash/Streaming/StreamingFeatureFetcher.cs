@@ -75,7 +75,7 @@ namespace Unleash.Streaming
             {
                 case "unleash-connected":
                 case "unleash-updated":
-                    Logger.Debug(() => $"UNLEASH: Handling event '{data.EventName}'");
+                    Logger.Debug(() => $"UNLEASH: Handling event '{data.EventName}' with id '{data.Message.LastEventId}'");
                     HandleStreamingUpdate(data.Message.Data);
                     break;
                 case "fetch-mode":

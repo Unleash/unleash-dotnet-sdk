@@ -137,6 +137,9 @@ namespace Unleash
             return Variant.UpgradeVariant(variant);
         }
 
+        private bool IsCustomScheduledTaskManager { get { return config.ScheduledTaskManager != null && !(config.ScheduledTaskManager is SystemTimerScheduledTaskManager); } }
+
+
         private UnleashConfig BuildUnleashConfig(
             UnleashSettings settings,
             bool synchronousInitialization,
@@ -230,6 +233,13 @@ namespace Unleash
             }
 
             services?.Dispose();
+            config.Engine?.Dispose();
+
+            if (IsCustomScheduledTaskManager)
+            {
+                Logger.Warn(() => $"UNLEASH: Disposing ScheduledTaskManager of type {config.ScheduledTaskManager.GetType().Name}");
+            }
+            config.ScheduledTaskManager.Dispose();
         }
     }
 }

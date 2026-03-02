@@ -16,12 +16,9 @@ namespace Unleash
         private static readonly ILog Logger = LogProvider.GetLogger(typeof(UnleashServices));
         private int ready = 0;
 
-        private readonly IUnleashScheduledTaskManager scheduledTaskManager;
-
         private PollingFeatureFetcher PollingFeatureFetcher;
         private StreamingFeatureFetcher StreamingFeatureFetcher;
         private EventCallbackConfig EventConfig { get; }
-        private bool IsCustomScheduledTaskManager { get { return scheduledTaskManager != null && !(scheduledTaskManager is SystemTimerScheduledTaskManager); } }
 
 
         internal IUnleashContextProvider ContextProvider { get; }
@@ -112,17 +109,10 @@ namespace Unleash
 
         public void Dispose()
         {
-            engine?.Dispose();
-            if (IsCustomScheduledTaskManager)
-            {
-                Logger.Warn(() => $"UNLEASH: Disposing ScheduledTaskManager of type {scheduledTaskManager.GetType().Name}");
-            }
-
             PollingFeatureFetcher.OnReady -= OnHydrationSourceReadyHandler;
             PollingFeatureFetcher.Dispose();
             StreamingFeatureFetcher.OnReady -= OnHydrationSourceReadyHandler;
             StreamingFeatureFetcher.Dispose();
-            scheduledTaskManager?.Dispose();
         }
     }
 }
