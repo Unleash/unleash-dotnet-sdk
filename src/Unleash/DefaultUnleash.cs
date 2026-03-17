@@ -29,7 +29,7 @@ namespace Unleash
 
         internal readonly MetricsService metrics;
 
-        public const string supportedSpecVersion = "6.0.1";
+        public const string supportedSpecVersion = "6.1.0";
 
         ///// <summary>
         ///// Initializes a new instance of Unleash client.
