@@ -31,8 +31,8 @@ Take a look at the demonstration site at [Unleash demo](https://app.unleash-host
 Read more of the main project at [github.com/unleash/unleash](https://github.com/Unleash/unleash)
 
 ## Features
-Supported Frameworks (through binaries for net6.0 and netstandard2.0)
-* .Net 6 and above
+Supported Frameworks (through binaries for net8.0 and netstandard2.0)
+* .Net 8 and above
 * NET Standard 2.0
 * .Net Framework 4.7 and above
 
@@ -66,6 +66,24 @@ The SDK will synchronize with the Unleash API on initialization, so it can take 
 This is usually not an issue and Unleash will do this in the background as soon as you initialize it.
 However, if it's important that you do not continue execution until the SDK has synchronized, then you should use the configuration explained in the [synchronous startup](#synchronous-startup) section.
 
+On .NET 8+, use the `AddUnleash` extension method to register the client as a singleton. This automatically integrates with `Microsoft.Extensions.Logging`:
+
+```csharp
+using Unleash;
+
+builder.Services.AddUnleash(settings =>
+{
+    settings.AppName = "dotnet-test";
+    settings.UnleashApi = new Uri("<your-api-url>");
+    settings.CustomHttpHeaders = new Dictionary<string, string>()
+    {
+        {"Authorization", "<your-api-token>" }
+    };
+});
+```
+
+Alternatively, you can create an instance manually:
+
 ```csharp
 using Unleash;
 var settings = new UnleashSettings()
@@ -81,7 +99,6 @@ var settings = new UnleashSettings()
 var unleash = new DefaultUnleash(settings);
 
 // Add to Container as Singleton
-// .NET Core 3/.NET 5/...
 services.AddSingleton<IUnleash>(c => unleash);
 
 ```
@@ -368,7 +385,26 @@ Dim unleash = New DefaultUnleash(unleashSettings)
 
 ## Logging
 
-By default Unleash-client uses LibLog to integrate with the currently configured logger for your application.
+### .NET 8+ (Microsoft.Extensions.Logging)
+
+On .NET 8+, the SDK uses `Microsoft.Extensions.Logging`. If you use `AddUnleash()`, logging is automatically wired from the DI container's `ILoggerFactory`.
+
+For manual instantiation, set the `LoggerFactory` property on `UnleashSettings`:
+
+```csharp
+var settings = new UnleashSettings()
+{
+    AppName = "dotnet-test",
+    UnleashApi = new Uri("<your-api-url>"),
+    LoggerFactory = myLoggerFactory // From your DI container or LoggerFactory.Create(...)
+};
+```
+
+If no `LoggerFactory` is provided, logging is silent by default.
+
+### .NET Standard 2.0 / .NET Framework (LibLog)
+
+On older frameworks, the SDK uses LibLog to integrate with the currently configured logger for your application.
 The supported loggers are:
 - Serilog
 - NLog
@@ -376,53 +412,12 @@ The supported loggers are:
 - EntLib
 - Loupe
 
-### Custom logger integration
 To plug in your own logger you can implement the `ILogProvider` interface, and register it with Unleash:
 
 ```csharp
 Unleash.Logging.LogProvider.SetCurrentLogProvider(new CustomLogProvider());
 var settings = new UnleashSettings()
 //...
-```
-
- The `GetLogger` method is responsible for returning a delegate to be used for logging, and your logging integration should be placed inside that delegate:
-
-```csharp
-using System;
-using Unleash.Logging;
-
-namespace Unleash.Demo.CustomLogging
-{
-    public class CustomLogProvider : ILogProvider
-    {
-        public Logger GetLogger(string name)
-        {
-            return (logLevel, messageFunc, exception, formatParameters) =>
-            {
-                // Plug in your logging code here
-
-                return true;
-            };
-        }
-
-        public IDisposable OpenMappedContext(string key, object value, bool destructure = false)
-        {
-            return new EmptyIDisposable();
-        }
-
-        public IDisposable OpenNestedContext(string message)
-        {
-            return new EmptyIDisposable();
-        }
-    }
-
-    public class EmptyIDisposable : IDisposable
-    {
-        public void Dispose()
-        {
-        }
-    }
-}
 ```
 
 
@@ -523,7 +518,7 @@ fakeUnleash.SetVariant("MyVariantFeature", new Variant("MyVariantFeature", new P
 ### Setup/Tool suggestions/Requirements
 Visual Studio Community / VS Code / JetBrains Rider
 Microsoft C# Dev Kit extension for VS Code
-.NET 8 (For tests)
+.NET 8
 
 ### Build/Test
 Code lives in `./src/Unleash`
