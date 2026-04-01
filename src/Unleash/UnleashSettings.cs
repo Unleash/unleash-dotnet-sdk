@@ -8,6 +8,9 @@ using Unleash.Communication;
 using Unleash.Internal;
 using Unleash.Scheduling;
 using Unleash.Utilities;
+#if NET8_0_OR_GREATER
+using Microsoft.Extensions.Logging;
+#endif
 
 namespace Unleash
 {
@@ -115,6 +118,16 @@ namespace Unleash
             get => _fileSystem ?? new FileSystem(Encoding);
             set => _fileSystem = value;
         }
+
+#if NET8_0_OR_GREATER
+        /// <summary>
+        /// Gets or sets the logger factory used for internal SDK logging.
+        /// When null, logging is silent (NullLoggerFactory).
+        /// For DI users, this is set automatically by AddUnleash().
+        /// For non-DI users, set this to enable logging output.
+        /// </summary>
+        public ILoggerFactory LoggerFactory { get; set; }
+#endif
 
         /// <summary>
         /// Gets or sets the toggle bootstrap provider (file, url, etc). Can be used for testing/mocking etc.

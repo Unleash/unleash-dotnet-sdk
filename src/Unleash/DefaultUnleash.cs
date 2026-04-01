@@ -43,6 +43,11 @@ namespace Unleash
 
         internal DefaultUnleash(UnleashSettings settings, bool synchronousInitialization, Action<EventCallbackConfig> callback = null, params IStrategy[] strategies)
         {
+#if NET8_0_OR_GREATER
+            if (settings.LoggerFactory != null)
+                Logging.LogProvider.SetLoggerFactory(settings.LoggerFactory);
+#endif
+
             var currentInstanceNo = Interlocked.Increment(ref InitializedInstanceCount);
 
             this.settings = settings;
