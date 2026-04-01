@@ -58,6 +58,7 @@
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
     <Compile Remove="Logging\LoggingAbstraction.cs" />
     <Compile Remove="ServiceCollectionExtensions.cs" />
+    <Compile Remove="Serialization\UnleashJsonSerializerContext.cs" />
   </ItemGroup>
 
   <ItemGroup>
