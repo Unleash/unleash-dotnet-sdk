@@ -19,9 +19,6 @@
     <PackageReference Include="FakeItEasy" Version="7.4.0" />
     <PackageReference Include="FluentAssertions" Version="6.11.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="NLog" Version="5.2.0" />
-    <PackageReference Include="NLog.Config" Version="4.7.15" />
-    <PackageReference Include="NLog.Schema" Version="5.2.0" />
     <PackageReference Include="RichardSzalay.MockHttp" Version="7.0.0" />
     <PackageReference Include="System.Text.Json" Version="10.0.3" />
   </ItemGroup>
@@ -61,12 +58,6 @@
     <Content Include="App_Data\etag-12345.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="NLog.config">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <None Include="NLog.xsd">
-      <SubType>Designer</SubType>
-    </None>
     <None Include="packages.config" />
   </ItemGroup>
 

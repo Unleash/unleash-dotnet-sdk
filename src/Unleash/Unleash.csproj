@@ -44,13 +44,22 @@
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
     <PackageReference Include="Microsoft.CSharp" Version="4.5.0" />
     <PackageReference Include="System.Text.Json" Version="8.0.5" />
+    <PackageReference Include="LibLog" Version="4.2.6">
+      <PrivateAssets>All</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
+    <Compile Remove="LibLog.cs" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <Compile Remove="Logging\LoggingAbstraction.cs" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="LaunchDarkly.EventSource" Version="5.3.0" />
-    <PackageReference Include="LibLog" Version="4.2.6">
-      <PrivateAssets>All</PrivateAssets>
-    </PackageReference>
     <PackageReference Include="Unleash.Yggdrasil" Version="1.3.0" />
   </ItemGroup>
 
