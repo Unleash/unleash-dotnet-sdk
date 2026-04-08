@@ -2,8 +2,6 @@ using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NUnit.Framework;
-using System;
-using System.Collections.Generic;
 using Unleash.Logging;
 using Unleash.Tests.Mock;
 

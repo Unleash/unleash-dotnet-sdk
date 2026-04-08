@@ -241,7 +241,11 @@ namespace Unleash.Communication
                 Bucket = new Yggdrasil.MetricsBucket(new Dictionary<string, Yggdrasil.FeatureCount>(), DateTimeOffset.UtcNow, DateTimeOffset.UtcNow)
             };
 
+#if NET8_0_OR_GREATER
+            var sendMetricsNode = JsonSerializer.SerializeToNode(clientMetrics, UnleashJsonSerializerContext.Default.ClientMetrics);
+#else
             var sendMetricsNode = JsonSerializer.SerializeToNode(clientMetrics, options);
+#endif
             var metricsNode = JsonNode.Parse(string.IsNullOrEmpty(metrics) ? "{}" : metrics);
 
             if (metricsNode["metrics"] != null)
