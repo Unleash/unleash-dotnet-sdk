@@ -5,8 +5,16 @@
 
 >  **Migrating to v5**
 >
-> If you use [bootstrapping](#bootstrapping), [custom strategies](#custom-strategies), or a custom JSON serializer, read the complete [migration guide](./v5_MIGRATION_GUIDE.md) before upgrading to v5.
+> If you use [bootstrapping](#bootstrapping), [custom strategies](#custom-strategies), or a custom JSON serializer, read the complete [v5 migration guide](./v5_MIGRATION_GUIDE.md) before upgrading to v5.
 
+>  **Migrating to v6**
+>
+> If you use
+> - Custom scheduled task managers.
+> - Event listeners.
+> - The `UnleashClientFactory` class.
+> - The `Environment` property on `UnleashSettings.`
+>  read the complete [v6 migration guide](./v6_MIGRATION_GUIDE.md) before upgrading to v6.
 
 ## Introduction
 
@@ -157,7 +165,7 @@ unleash.IsEnabled("SuperAwesomeFeature", true)
 
 #### Providing context
 
-You can also **provide an [Unleash context](https://docs.getunleash.io/reference/unleash-context)** to the `IsEnabled` method:
+You can also **provide an [Unleash context](https://docs.getunleash.io/concepts/unleash-context)** to the `IsEnabled` method:
 
 ```csharp
 var context = new UnleashContext
@@ -173,9 +181,10 @@ Refer to the [Unleash context](#unleash-context) section for more information ab
 ## Handling events
 
 Currently supported events:
--  [Impression data events](https://docs.getunleash.io/advanced/impression-data#impression-event-data)
+-  [Impression data events](https://docs.getunleash.io/concepts/impression-data)
 -  Error events
 -  Toggles updated event
+-  Ready event
 
 ```csharp
 
@@ -184,15 +193,18 @@ var settings = new UnleashSettings()
     // ...
 };
 
-var unleash = new DefaultUnleash(settings);
-
-// Set up handling of impression and error events
-unleash.ConfigureEvents(cfg =>
-{
-    cfg.ImpressionEvent = evt => { Console.WriteLine($"{evt.FeatureName}: {evt.Enabled}"); };
-    cfg.ErrorEvent = evt => { /* Handling code here */ Console.WriteLine($"{evt.ErrorType} occured."); };
-    cfg.TogglesUpdatedEvent = evt => { /* Handling code here */ Console.WriteLine($"Toggles updated on: {evt.UpdatedOn}"); };
-});
+var unleash = new DefaultUnleash(
+    settings,
+    callback:
+        cfg =>
+        {
+            // Set up handling of impression and error events
+            cfg.ImpressionEvent = evt => { Console.WriteLine($"{evt.FeatureName}: {evt.Enabled}"); };
+            cfg.ReadyEvent = evt => { Console.WriteLine($"Unleash ready"); };
+            cfg.ErrorEvent = evt => { /* Handling code here */ Console.WriteLine($"{evt.ErrorType} occured."); };
+            cfg.TogglesUpdatedEvent = evt => { /* Handling code here */ Console.WriteLine($"Toggles updated on: {evt.UpdatedOn}"); };
+        }
+);
 
 ```
 
@@ -210,11 +222,11 @@ The .Net client comes with implementations for the built-in activation strategie
 - ApplicationHostnameStrategy
 - FlexibleRolloutStrategy
 
-Read more about the strategies in [the activation strategy reference docs](https://docs.getunleash.io/reference/activation-strategies).
+Read more about the strategies in [the activation strategy reference docs](https://docs.getunleash.io/concepts/activation-strategies).
 
 ### Custom strategies
 
-You can also specify and implement your own [custom strategies](https://docs.getunleash.io/reference/custom-activation-strategies). The specification must be registered in the Unleash UI and you must register the strategy implementation when you wire up unleash.
+You can also specify and implement your own [custom strategies](https://docs.getunleash.io/concepts/activation-strategies#custom-strategies). The specification must be registered in the Unleash UI and you must register the strategy implementation when you wire up unleash.
 
 ```csharp
 IStrategy s1 = new MyAwesomeStrategy();
@@ -225,7 +237,7 @@ IUnleash unleash = new DefaultUnleash(config, s1, s2);
 
 ## Unleash context
 
-In order to use some of the common activation strategies you must provide an [Unleash context](https://docs.getunleash.io/reference/unleash-context).
+In order to use some of the common activation strategies you must provide an [Unleash context](https://docs.getunleash.io/concepts/unleash-context).
 
 If you have configured custom stickiness and want to use that with the FlexibleRolloutStrategy or Variants, add the custom stickiness parameters to the Properties dictionary on the Unleash Context:
 
@@ -421,7 +433,7 @@ By default unleash-client fetches the feature toggles from unleash-server every 
 * When .json file does not exists
 * When the named feature toggle does not exist in .json file
 
-The backup file name will follow this pattern: `{fileNameWithoutExtension}-{AppName}-{InstanceTag}-{SdkVersion}.{extension}`, where InstanceTag is either what you configure on `UnleashSettings` during startup, or a formatted string with a random component following this pattern: `{Dns.GetHostName()}-generated-{Guid.NewGuid()}`.
+The backup file name will follow this pattern: `unleash.toggles-{settings.AppName}-{settings.SdkVersion}.json`.
 
 You can configure InstanceTag like this:
 
@@ -511,7 +523,7 @@ fakeUnleash.SetVariant("MyVariantFeature", new Variant("MyVariantFeature", new P
 ### Setup/Tool suggestions/Requirements
 Visual Studio Community / VS Code / JetBrains Rider
 Microsoft C# Dev Kit extension for VS Code
-.NET 6
+.NET 8 (For tests)
 
 ### Build/Test
 Code lives in `./src/Unleash`
@@ -537,4 +549,4 @@ This starts the release workflow which builds the new release and pushes the art
 
 ## Other information
 
-- Check out our guide for more information on how to build and scale [feature flag](https://docs.getunleash.io/topics/feature-flags/feature-flag-best-practices) systems
+- Check out our guide for more information on how to build and scale [feature flag](https://docs.getunleash.io/get-started/what-is-a-feature-flag#applying-feature-flag-best-practices-with-unleash) systems
