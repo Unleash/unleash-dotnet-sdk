@@ -208,6 +208,54 @@ var unleash = new DefaultUnleash(
 
 ```
 
+## Streaming beta
+
+Streaming support is available as a beta feature for non-production customer environments. It is documented so you can test and validate the behavior early, but it is not recommended for production customer traffic yet.
+
+Streaming only works when this SDK connects to Unleash Enterprise Edge. It is not supported against Unleash Open Source, the regular Unleash API, or non-Enterprise Edge endpoints. Configure `UnleashSettings.UnleashApi` with the Enterprise Edge API root and use a valid Edge client token.
+
+Use the Enterprise Edge `/api/` URL as the SDK base URL:
+
+```text
+https://mycompany.example/edge/api/
+```
+
+Enable streaming with `ExperimentalUseStreaming`:
+
+```csharp
+using System;
+using System.Collections.Generic;
+using Unleash;
+
+var settings = new UnleashSettings()
+{
+    AppName = "dotnet-test",
+    UnleashApi = new Uri("https://mycompany.example/edge/api/"),
+    ExperimentalUseStreaming = true,
+    CustomHttpHeaders = new Dictionary<string, string>()
+    {
+        {"Authorization", Environment.GetEnvironmentVariable("UNLEASH_API_KEY") ?? "<your-edge-client-token>" }
+    }
+};
+
+var unleash = new DefaultUnleash(
+    settings,
+    callback:
+        cfg =>
+        {
+            cfg.ReadyEvent = evt => { Console.WriteLine("Unleash ready"); };
+            cfg.ErrorEvent = evt => { Console.WriteLine($"{evt.ErrorType} occurred."); };
+            cfg.TogglesUpdatedEvent = evt => { Console.WriteLine($"Toggles updated on: {evt.UpdatedOn}"); };
+        }
+);
+```
+
+The SDK normalizes `UnleashApi` by adding a trailing slash when one is missing, so both `https://mycompany.example/edge/api` and `https://mycompany.example/edge/api/` work. Prefer the trailing slash form in configuration.
+
+If the streaming endpoint is unavailable, misconfigured, or unsupported, the SDK can fall back to polling against the same `UnleashApi` URL. HTTP `401`, `403`, `404`, `429`, and `501` responses trigger polling failover immediately. Repeated network errors or HTTP `408`, `500`, `502`, `503`, and `504` responses trigger polling failover after 5 failures within 60 seconds. Enterprise Edge can also send a `fetch-mode` event with `polling`, which makes the SDK switch to polling automatically. When failover happens, the SDK logs a warning and starts the normal polling feature fetcher.
+
+Streaming hydration and update events update the SDK's in-memory state, save the local backup, and raise `TogglesUpdatedEvent`. The first successful streaming or polling hydration raises `ReadyEvent`. If a streaming update cannot be processed by the engine, the SDK logs a warning and reconnects so it can hydrate again instead of continuing from incomplete data. During reconnects or polling fallback, flag evaluation continues from the latest known data. If the SDK has not synchronized any data yet and no backup is available, normal default evaluation behavior applies.
+
 
 ## Activation strategies
 
