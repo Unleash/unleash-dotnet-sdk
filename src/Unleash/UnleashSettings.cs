@@ -105,10 +105,16 @@ namespace Unleash
         /// </summary>
         internal IUnleashApiClient UnleashApiClient { get; set; }
 
+        private IFileSystem _fileSystem;
+
         /// <summary>
         /// INTERNAL: Gets or sets the file system abstraction. Can be used for testing/mocking etc.
         /// </summary>
-        internal IFileSystem FileSystem { get; set; }
+        internal IFileSystem FileSystem
+        {
+            get => _fileSystem ?? new FileSystem(Encoding);
+            set => _fileSystem = value;
+        }
 
         /// <summary>
         /// Gets or sets the toggle bootstrap provider (file, url, etc). Can be used for testing/mocking etc.
