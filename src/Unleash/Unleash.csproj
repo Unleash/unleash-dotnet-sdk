@@ -1,5 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+  <!-- Logging feature switch wiring (see build/Unleash.Client.targets). Imported here
+       for the SDK's own build; packed into the NuGet build/ folder for consumers. -->
+  <Import Project="..\..\build\Unleash.Client.targets" />
+
   <PropertyGroup>
     <RootNamespace>Unleash</RootNamespace>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
@@ -79,6 +83,7 @@
     <None Include="..\..\resources\logo.png" Pack="true" PackagePath="\">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="..\..\build\Unleash.Client.targets" Pack="true" PackagePath="build\Unleash.Client.targets" />
   </ItemGroup>
 
   <PropertyGroup>
