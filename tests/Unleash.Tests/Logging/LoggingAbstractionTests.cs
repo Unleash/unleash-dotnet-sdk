@@ -12,18 +12,21 @@ namespace Unleash.Tests.Logging
         [TearDown]
         public void TearDown()
         {
-            // Reset to default after each test
-            LogProvider.SetLoggerFactory(null);
+            // Reset shared state after each test.
+            UnleashLog.SetLoggerFactory(null);
+            // Restore the feature switch to its default (on).
+            AppContext.SetSwitch("Unleash.UseLibLog", true);
         }
 
         [Test]
         public void GetLogger_returns_working_ILog_with_no_factory_configured()
         {
-            var log = LogProvider.GetLogger(typeof(LoggingAbstractionTests));
+            var log = UnleashLog.GetLogger(typeof(LoggingAbstractionTests));
 
             log.Should().NotBeNull();
 
-            // Should not throw — silently discards with NullLoggerFactory
+            // No factory + default switch (on) routes to LibLog; with no logging
+            // provider present it resolves to a no-op logger and must not throw.
             log.Info(() => "test message");
         }
 
@@ -33,8 +36,8 @@ namespace Unleash.Tests.Logging
             var sink = new TestLoggerProvider();
             var factory = LoggerFactory.Create(builder => builder.AddProvider(sink).SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Trace));
 
-            LogProvider.SetLoggerFactory(factory);
-            var log = LogProvider.GetLogger(typeof(LoggingAbstractionTests));
+            UnleashLog.SetLoggerFactory(factory);
+            var log = UnleashLog.GetLogger(typeof(LoggingAbstractionTests));
 
             log.Info(() => "hello from test");
 
@@ -47,8 +50,8 @@ namespace Unleash.Tests.Logging
             var sink = new TestLoggerProvider();
             var factory = LoggerFactory.Create(builder => builder.AddProvider(sink).SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Trace));
 
-            LogProvider.SetLoggerFactory(factory);
-            var log = LogProvider.GetLogger(typeof(LoggingAbstractionTests));
+            UnleashLog.SetLoggerFactory(factory);
+            var log = UnleashLog.GetLogger(typeof(LoggingAbstractionTests));
 
             log.Trace(() => "trace msg");
             log.Debug(() => "debug msg");
@@ -72,8 +75,8 @@ namespace Unleash.Tests.Logging
             var sink = new TestLoggerProvider();
             var factory = LoggerFactory.Create(builder => builder.AddProvider(sink).SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Trace));
 
-            LogProvider.SetLoggerFactory(factory);
-            var log = LogProvider.GetLogger(typeof(LoggingAbstractionTests));
+            UnleashLog.SetLoggerFactory(factory);
+            var log = UnleashLog.GetLogger(typeof(LoggingAbstractionTests));
 
             var ex = new InvalidOperationException("boom");
             log.Error(() => "something failed", ex);
@@ -85,17 +88,44 @@ namespace Unleash.Tests.Logging
         public void Lazy_resolution_picks_up_factory_set_after_logger_creation()
         {
             // Logger created before factory is set (simulates static field initializer)
-            var log = LogProvider.GetLogger(typeof(LoggingAbstractionTests));
+            var log = UnleashLog.GetLogger(typeof(LoggingAbstractionTests));
 
             var sink = new TestLoggerProvider();
             var factory = LoggerFactory.Create(builder => builder.AddProvider(sink).SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Trace));
 
             // Factory set after logger was created
-            LogProvider.SetLoggerFactory(factory);
+            UnleashLog.SetLoggerFactory(factory);
 
             log.Info(() => "late-bound message");
 
             sink.Messages.Should().ContainSingle(m => m.Contains("late-bound message"));
+        }
+
+        [Test]
+        public void Explicit_factory_wins_even_when_UseLibLog_switch_is_on()
+        {
+            AppContext.SetSwitch("Unleash.UseLibLog", true);
+
+            var sink = new TestLoggerProvider();
+            var factory = LoggerFactory.Create(builder => builder.AddProvider(sink).SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Trace));
+
+            UnleashLog.SetLoggerFactory(factory);
+            var log = UnleashLog.GetLogger(typeof(LoggingAbstractionTests));
+
+            log.Info(() => "factory-wins message");
+
+            sink.Messages.Should().ContainSingle(m => m.Contains("factory-wins message"));
+        }
+
+        [Test]
+        public void UseLibLog_switch_off_with_no_factory_is_silent()
+        {
+            AppContext.SetSwitch("Unleash.UseLibLog", false);
+
+            var log = UnleashLog.GetLogger(typeof(LoggingAbstractionTests));
+
+            // No factory + switch off => silent. Log returns false and does not throw.
+            log.Log(Unleash.Logging.LogLevel.Error, () => "dropped").Should().BeFalse();
         }
 
         [Test]

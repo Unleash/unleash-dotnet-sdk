@@ -24,7 +24,7 @@ namespace Unleash.Communication
     internal class UnleashApiClient : IUnleashApiClient
     {
 
-        private static readonly ILog Logger = LogProvider.GetLogger(typeof(UnleashApiClient));
+        private static readonly ILog Logger = UnleashLog.GetLogger(typeof(UnleashApiClient));
 
         private readonly HttpClient httpClient;
         private readonly UnleashApiClientRequestHeaders clientRequestHeaders;

@@ -14,7 +14,7 @@ namespace Unleash
     /// <inheritdoc />
     public class DefaultUnleash : IUnleash
     {
-        private static readonly ILog Logger = LogProvider.GetLogger(typeof(DefaultUnleash));
+        private static readonly ILog Logger = UnleashLog.GetLogger(typeof(DefaultUnleash));
         private readonly string connectionId = Guid.NewGuid().ToString();
         private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         private UnleashConfig config;
@@ -45,7 +45,7 @@ namespace Unleash
         {
 #if NET8_0_OR_GREATER
             if (settings.LoggerFactory != null)
-                Logging.LogProvider.SetLoggerFactory(settings.LoggerFactory);
+                Logging.UnleashLog.SetLoggerFactory(settings.LoggerFactory);
 #endif
 
             var currentInstanceNo = Interlocked.Increment(ref InitializedInstanceCount);
