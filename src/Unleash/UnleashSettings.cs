@@ -121,10 +121,12 @@ namespace Unleash
 
 #if NET8_0_OR_GREATER
         /// <summary>
-        /// Gets or sets the logger factory used for internal SDK logging.
-        /// When null, logging is silent (NullLoggerFactory).
+        /// Gets or sets the logger factory used for internal SDK logging (net8.0+).
+        /// When set, Unleash logs through Microsoft.Extensions.Logging and this takes
+        /// precedence over LibLog. When null, logging uses LibLog's reflection-based
+        /// provider detection unless the Unleash.UseLibLog feature switch is disabled
+        /// (see the &lt;UnleashUseLibLog&gt; MSBuild property), in which case logging is silent.
         /// For DI users, this is set automatically by AddUnleash().
-        /// For non-DI users, set this to enable logging output.
         /// </summary>
         public ILoggerFactory LoggerFactory { get; set; }
 #endif
