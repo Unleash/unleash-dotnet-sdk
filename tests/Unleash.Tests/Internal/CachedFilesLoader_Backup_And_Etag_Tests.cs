@@ -107,5 +107,39 @@ namespace Unleash.Tests.Internal
             fileSystem.ReadAllText(CachedFilesLoader.GetFeatureToggleETagFilePath(settings)).Should().Be("12345");
             fileSystem.ReadAllText(CachedFilesLoader.GetFeatureToggleFilePath(settings)).Should().Be("features");
         }
+
+        [Test]
+        public void Saving_Features_Removes_Temporary_File_In_Case_Of_Failure()
+        {
+            var fileSystem = A.Fake<IFileSystem>();
+            var tempPath = string.Empty;
+            var settings = new UnleashSettings
+            {
+                FileSystem = fileSystem
+            };
+            var featureTogglePath = CachedFilesLoader.GetFeatureToggleFilePath(settings);
+
+            A.CallTo(() => fileSystem.Encoding)
+                .Returns(System.Text.Encoding.UTF8);
+            A.CallTo(() => fileSystem.FileOpenCreate(A<string>._))
+                .ReturnsLazily((string path) =>
+                {
+                    tempPath = path;
+                    return new MemoryStream();
+                });
+            A.CallTo(() => fileSystem.FileExists(A<string>._))
+                .ReturnsLazily((string path) => path == featureTogglePath || path == tempPath);
+            A.CallTo(() => fileSystem.Replace(A<string>._, featureTogglePath, null))
+                .Throws<IOException>();
+
+            var fileLoader = new CachedFilesLoader(settings, null, fileSystem);
+
+            // Act
+            fileLoader.Save(new Backup("new-features", "12345"));
+
+            // Assert
+            A.CallTo(() => fileSystem.Delete(tempPath))
+                .MustHaveHappenedOnceExactly();
+        }
     }
 }

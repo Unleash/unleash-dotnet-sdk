@@ -140,7 +140,7 @@ namespace Unleash.Internal
             }
             catch (Exception)
             {
-                try { if (fileSystem.FileExists(path)) fileSystem.Delete(path); } catch { /* swallow */ }
+                try { if (fileSystem.FileExists(tempPath)) fileSystem.Delete(tempPath); } catch { /* swallow */ }
                 throw;
             }
         }
