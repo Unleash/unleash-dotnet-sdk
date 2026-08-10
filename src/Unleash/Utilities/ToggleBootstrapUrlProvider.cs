@@ -10,7 +10,7 @@ namespace Unleash.Utilities
 {
     public class ToggleBootstrapUrlProvider : IToggleBootstrapProvider
     {
-        private static readonly ILog Logger = LogProvider.GetLogger(typeof(ToggleBootstrapUrlProvider));
+        private static readonly ILog Logger = UnleashLog.GetLogger(typeof(ToggleBootstrapUrlProvider));
 
         private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         private readonly HttpClient client;

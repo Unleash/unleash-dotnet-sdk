@@ -1,0 +1,31 @@
+<Project>
+  <!-- Unleash net8.0 logging feature switch: LibLog (default) vs Microsoft.Extensions.Logging-only/AOT.
+
+       Consumers set <UnleashUseLibLog>true|false</UnleashUseLibLog>. Default is true
+       (LibLog's reflection-based provider detection keeps working, non-breaking).
+       When publishing trimmed or Native AOT and the property is left unset, it is
+       auto-set to false (LibLog cannot survive trimming) and warning UNLEASH001 is
+       emitted so the choice is never silent. Setting the property explicitly silences
+       the warning. -->
+
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net8.0'">
+    <!-- Record whether we are about to auto-disable (unset + trimming/AOT). -->
+    <_UnleashAutoDisableLibLog Condition="'$(UnleashUseLibLog)' == '' and ('$(PublishAot)' == 'true' or '$(PublishTrimmed)' == 'true')">true</_UnleashAutoDisableLibLog>
+    <!-- Apply the default. -->
+    <UnleashUseLibLog Condition="'$(UnleashUseLibLog)' == '' and '$(_UnleashAutoDisableLibLog)' == 'true'">false</UnleashUseLibLog>
+    <UnleashUseLibLog Condition="'$(UnleashUseLibLog)' == ''">true</UnleashUseLibLog>
+  </PropertyGroup>
+
+  <!-- Drives both runtimeconfig.json (runtime AppContext switch) and the ILLink
+       feature (consumed by the SDK's embedded ILLink.Substitutions.xml). -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
+    <RuntimeHostConfigurationOption Include="Unleash.UseLibLog" Value="$(UnleashUseLibLog)" Trim="true" />
+  </ItemGroup>
+
+  <Target Name="_UnleashWarnAutoDisabledLibLog"
+          BeforeTargets="Build;Publish"
+          Condition="'$(TargetFramework)' == 'net8.0' and '$(_UnleashAutoDisableLibLog)' == 'true'">
+    <Warning Code="UNLEASH001"
+             Text="Unleash: reflection-based LibLog logging was auto-disabled because PublishAot/PublishTrimmed is set. Unleash logs now require UnleashSettings.LoggerFactory or AddUnleash(). Set &lt;UnleashUseLibLog&gt;true&lt;/UnleashUseLibLog&gt; to keep LibLog, or &lt;UnleashUseLibLog&gt;false&lt;/UnleashUseLibLog&gt; to confirm and silence this warning." />
+  </Target>
+</Project>

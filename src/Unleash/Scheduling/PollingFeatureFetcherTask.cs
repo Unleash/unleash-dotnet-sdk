@@ -8,7 +8,7 @@ namespace Unleash.Scheduling
 {
     internal class PollingFeatureFetcher : IDisposable
     {
-        private static readonly ILog Logger = LogProvider.GetLogger(typeof(PollingFeatureFetcher));
+        private static readonly ILog Logger = UnleashLog.GetLogger(typeof(PollingFeatureFetcher));
         private TaskFactory TaskFactory;
         private bool ready;
         private readonly IUnleashScheduledTaskManager scheduledTaskManager;

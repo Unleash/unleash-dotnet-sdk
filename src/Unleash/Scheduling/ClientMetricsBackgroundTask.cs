@@ -10,7 +10,7 @@ namespace Unleash.Scheduling
 {
     internal class ClientMetricsBackgroundTask : IUnleashScheduledTask
     {
-        private static readonly ILog Logger = LogProvider.GetLogger(typeof(ClientMetricsBackgroundTask));
+        private static readonly ILog Logger = UnleashLog.GetLogger(typeof(ClientMetricsBackgroundTask));
         private readonly YggdrasilEngine engine;
         private readonly IUnleashApiClient apiClient;
         private TimeSpan? sendMetricsInterval;
