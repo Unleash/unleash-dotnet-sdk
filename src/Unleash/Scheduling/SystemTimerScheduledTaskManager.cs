@@ -24,36 +24,43 @@ namespace Unleash.Scheduling
 
             async void Callback(object state)
             {
-                if (_shuttingDown) return;
-
                 try
                 {
-                    if (!cancellationToken.IsCancellationRequested)
+                    if (_shuttingDown) return;
+
+                    try
                     {
-                        await task.ExecuteAsync(cancellationToken);
+                        if (!cancellationToken.IsCancellationRequested)
+                        {
+                            await task.ExecuteAsync(cancellationToken);
+                        }
                     }
-                }
-                catch (TaskCanceledException taskCanceledException)
-                {
-                    if (!cancellationToken.IsCancellationRequested)
+                    catch (TaskCanceledException taskCanceledException)
                     {
-                        Logger.Warn(() => $"UNLEASH: Task '{name}' cancelled ...", taskCanceledException);
+                        if (!cancellationToken.IsCancellationRequested)
+                        {
+                            Logger.Warn(() => $"UNLEASH: Task '{name}' cancelled ...", taskCanceledException);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Warn(() => $"UNLEASH: Unhandled exception from background task '{name}'.", ex);
+                    }
+                    finally
+                    {
+                        if (cancellationToken.IsCancellationRequested)
+                        {
+                            // Stop the timer.
+                            if (timers.TryGetValue(name, out var timerToStop))
+                            {
+                                timerToStop.SafeTimerChange(Timeout.Infinite, Timeout.Infinite, ref _disposed);
+                            }
+                        }
                     }
                 }
                 catch (Exception ex)
                 {
-                    Logger.Warn(() => $"UNLEASH: Unhandled exception from background task '{name}'.", ex);
-                }
-                finally
-                {
-                    if (cancellationToken.IsCancellationRequested)
-                    {
-                        // Stop the timer.
-                        if (timers.TryGetValue(name, out var timerToStop))
-                        {
-                            timerToStop.SafeTimerChange(Timeout.Infinite, Timeout.Infinite, ref _disposed);
-                        }
-                    }
+                    Logger.Warn(() => $"UNLEASH: Unhandled exception escaped background task '{name}'.", ex);
                 }
             }
 
