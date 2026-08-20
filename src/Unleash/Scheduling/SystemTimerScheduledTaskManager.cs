@@ -21,6 +21,7 @@ namespace Unleash.Scheduling
         public void ConfigureTask(IUnleashScheduledTask task, CancellationToken cancellationToken, bool start)
         {
             var name = task.Name;
+            Timer timer = null;
 
             async void Callback(object state)
             {
@@ -48,10 +49,13 @@ namespace Unleash.Scheduling
                 {
                     if (cancellationToken.IsCancellationRequested)
                     {
-                        // Stop the timer.
-                        if (timers.TryGetValue(name, out var timerToStop))
+                        try
                         {
-                            timerToStop.SafeTimerChange(Timeout.Infinite, Timeout.Infinite, ref _disposed);
+                            timer.Change(Timeout.Infinite, Timeout.Infinite);
+                        }
+                        catch (ObjectDisposedException)
+                        {
+                            // Dispose won the race; the timer is already stopped.
                         }
                     }
                 }
@@ -65,8 +69,9 @@ namespace Unleash.Scheduling
                 ? Timeout.InfiniteTimeSpan
                 : task.Interval;
 
-            // Don't start the timer before it has been added to the dictionary.
-            var timer = new Timer(
+            // Keep the timer disabled until the captured variable has been assigned
+            // and the timer has been added to the dictionary.
+            timer = new Timer(
                 callback: Callback,
                 state: null,
                 dueTime: Timeout.Infinite,
