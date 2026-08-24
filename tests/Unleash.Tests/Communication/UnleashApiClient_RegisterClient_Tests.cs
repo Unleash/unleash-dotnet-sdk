@@ -21,7 +21,7 @@ namespace Unleash.Tests.Communication
                 .WithPartialContent("specVersion")
                 .WithPartialContent("platformName")
                 .WithPartialContent("platformVersion")
-                .WithPartialContent("\"yggdrasilVersion\":\"0.14.0\"")
+                .WithPartialContent("\"yggdrasilVersion\":\"0.21.5\"")
                 .Respond("application/json", "{ 'status': 'ok' }");
 
             var clientRegistration = new ClientRegistration()
