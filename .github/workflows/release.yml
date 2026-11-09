@@ -8,9 +8,18 @@ on:
 
 jobs:
   build:
+    permissions:
+        id-token: write
+
     runs-on: windows-2022
 
     steps:
+      - name: NuGet login (OIDC → temp API key)
+        uses: NuGet/login@v1
+        id: login
+        with:
+          user: david-unleash
+
       - uses: actions/checkout@v2
 
       # Set up MSBuild in PATH for command
@@ -42,4 +51,4 @@ jobs:
         run: msbuild Unleash.sln /p:Configuration=Release /p:Version=${{ env.nuget }} /p:FileVersion=${{ env.file }} /p:AssemblyVersion=${{ env.assembly }}
 
       - name: Publish package
-        run: nuget push **\Unleash.Client.*.nupkg -Source 'https://api.nuget.org/v3/index.json' -ApiKey ${{ secrets.NUGET_API_KEY }}
+        run: nuget push **\Unleash.Client.*.nupkg -Source 'https://api.nuget.org/v3/index.json' -ApiKey ${{ steps.login.outputs.NUGET_API_KEY }}
