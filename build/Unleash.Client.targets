@@ -31,6 +31,6 @@
           BeforeTargets="Build;Publish"
           Condition="'$(_UnleashAutoDisableLibLog)' == 'true'">
     <Warning Code="UNLEASH001"
-             Text="Unleash: reflection-based LibLog logging was auto-disabled because PublishAot/PublishTrimmed is set. Unleash logs now require UnleashSettings.LoggerFactory. Set &lt;UnleashUseLibLog&gt;true&lt;/UnleashUseLibLog&gt; to keep LibLog, or &lt;UnleashUseLibLog&gt;false&lt;/UnleashUseLibLog&gt; to confirm and silence this warning." />
+             Text="Unleash: reflection-based LibLog logging was auto-disabled because PublishAot/PublishTrimmed is set. Unleash logs now require UnleashSettings.LoggerFactory or AddUnleash(). Set &lt;UnleashUseLibLog&gt;true&lt;/UnleashUseLibLog&gt; to keep LibLog, or &lt;UnleashUseLibLog&gt;false&lt;/UnleashUseLibLog&gt; to confirm and silence this warning." />
   </Target>
 </Project>

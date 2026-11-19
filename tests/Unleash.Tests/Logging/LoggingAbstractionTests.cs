@@ -1,7 +1,9 @@
 using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NUnit.Framework;
 using Unleash.Logging;
+using Unleash.Tests.Mock;
 
 namespace Unleash.Tests.Logging
 {
@@ -140,6 +142,30 @@ namespace Unleash.Tests.Logging
             using var unleash = new DefaultUnleash(settings);
 
             // The SDK logs an Info message during construction
+            sink.Messages.Should().Contain(m => m.Contains("UNLEASH:"));
+        }
+
+        [Test]
+        public void AddUnleash_resolves_LoggerFactory_from_DI()
+        {
+            var sink = new TestLoggerProvider();
+
+            var services = new ServiceCollection();
+            services.AddLogging(builder => builder.AddProvider(sink).SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Trace));
+            services.AddSingleton<MockApiClient>();
+            services.AddUnleash(settings =>
+            {
+                settings.AppName = "test-di";
+                settings.UnleashApi = new Uri("http://localhost:4242/");
+                settings.DisableSingletonWarning = true;
+                settings.UnleashApiClient = new MockApiClient();
+                settings.FileSystem = new MockFileSystem();
+            });
+
+            var provider = services.BuildServiceProvider();
+            using var unleash = provider.GetRequiredService<IUnleash>();
+
+            unleash.Should().NotBeNull();
             sink.Messages.Should().Contain(m => m.Contains("UNLEASH:"));
         }
 

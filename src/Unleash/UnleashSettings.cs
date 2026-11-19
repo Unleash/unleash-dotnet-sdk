@@ -126,6 +126,7 @@ namespace Unleash
         /// precedence over LibLog. When null, logging uses LibLog's reflection-based
         /// provider detection unless the Unleash.UseLibLog feature switch is disabled
         /// (see the &lt;UnleashUseLibLog&gt; MSBuild property), in which case logging is silent.
+        /// For DI users, this is set automatically by AddUnleash().
         /// </summary>
         public ILoggerFactory LoggerFactory { get; set; }
 #endif

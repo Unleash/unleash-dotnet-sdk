@@ -66,6 +66,24 @@ The SDK will synchronize with the Unleash API on initialization, so it can take 
 This is usually not an issue and Unleash will do this in the background as soon as you initialize it.
 However, if it's important that you do not continue execution until the SDK has synchronized, then you should use the configuration explained in the [synchronous startup](#synchronous-startup) section.
 
+On .NET 8+, use the `AddUnleash` extension method to register the client as a singleton. It resolves `ILoggerFactory` from the container, so Unleash logs through `Microsoft.Extensions.Logging`:
+
+```csharp
+using Unleash;
+
+builder.Services.AddUnleash(settings =>
+{
+    settings.AppName = "dotnet-test";
+    settings.UnleashApi = new Uri("<your-api-url>");
+    settings.CustomHttpHeaders = new Dictionary<string, string>()
+    {
+        {"Authorization", "<your-api-token>" }
+    };
+});
+```
+
+Alternatively, you can create an instance manually:
+
 ```csharp
 using Unleash;
 var settings = new UnleashSettings()
@@ -428,7 +446,7 @@ namespace Unleash.Demo.CustomLogging
 ### Microsoft.Extensions.Logging (.NET 8+)
 
 On .NET 8 and later you can route Unleash's logs through `Microsoft.Extensions.Logging`. Set the
-`LoggerFactory` property on `UnleashSettings`. A factory set here always takes precedence over LibLog.
+`LoggerFactory` property on `UnleashSettings`. A factory set here always takes precedence over LibLog. If you register the client with `AddUnleash()`, the factory is resolved from the DI container.
 
 ```csharp
 var settings = new UnleashSettings()
