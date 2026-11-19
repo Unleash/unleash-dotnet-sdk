@@ -12,7 +12,7 @@ namespace Unleash.Scheduling
 {
     internal class FetchFeatureTogglesTask : IUnleashScheduledTask
     {
-        private static readonly ILog Logger = LogProvider.GetLogger(typeof(FetchFeatureTogglesTask));
+        private static readonly ILog Logger = UnleashLog.GetLogger(typeof(FetchFeatureTogglesTask));
         private readonly IBackupManager backupManager;
         private readonly EventCallbackConfig eventConfig;
         private readonly IUnleashApiClient apiClient;

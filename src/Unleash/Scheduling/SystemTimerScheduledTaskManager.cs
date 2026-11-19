@@ -14,7 +14,7 @@ namespace Unleash.Scheduling
     /// </summary>
     internal class SystemTimerScheduledTaskManager : IUnleashScheduledTaskManager
     {
-        private static readonly ILog Logger = LogProvider.GetLogger(typeof(SystemTimerScheduledTaskManager));
+        private static readonly ILog Logger = UnleashLog.GetLogger(typeof(SystemTimerScheduledTaskManager));
 
         private readonly Dictionary<string, Timer> timers = new Dictionary<string, Timer>();
 

@@ -15,7 +15,7 @@ namespace Unleash.Streaming
     /// </summary>
     internal class StreamingFeatureFetcher
     {
-        private static readonly ILog Logger = LogProvider.GetLogger(typeof(StreamingFeatureFetcher));
+        private static readonly ILog Logger = UnleashLog.GetLogger(typeof(StreamingFeatureFetcher));
         private int ready = 0;
         private TaskFactory TaskFactory;
 

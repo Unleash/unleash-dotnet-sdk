@@ -11,7 +11,7 @@ namespace Unleash.Internal
 {
     internal static class UnleashExtensions
     {
-        private static readonly ILog Logger = LogProvider.GetLogger(typeof(UnleashExtensions));
+        private static readonly ILog Logger = UnleashLog.GetLogger(typeof(UnleashExtensions));
 
         internal static void AddContentTypeJson(this HttpContentHeaders headers)
         {
