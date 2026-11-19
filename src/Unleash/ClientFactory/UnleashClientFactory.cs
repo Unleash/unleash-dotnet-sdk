@@ -9,7 +9,7 @@ namespace Unleash.ClientFactory
     /// <inheritdoc />
     public class UnleashClientFactory : IUnleashClientFactory
     {
-        private static readonly ILog Logger = LogProvider.GetLogger(typeof(UnleashClientFactory));
+        private static readonly ILog Logger = UnleashLog.GetLogger(typeof(UnleashClientFactory));
 
         /// <summary>
         /// Initializes a new instance of Unleash client.

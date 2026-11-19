@@ -13,7 +13,7 @@ namespace Unleash
 {
     internal class UnleashServices : IDisposable
     {
-        private static readonly ILog Logger = LogProvider.GetLogger(typeof(UnleashServices));
+        private static readonly ILog Logger = UnleashLog.GetLogger(typeof(UnleashServices));
         private int ready = 0;
 
         private PollingFeatureFetcher PollingFeatureFetcher;
