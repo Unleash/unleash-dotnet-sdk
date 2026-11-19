@@ -1,0 +1,36 @@
+<Project>
+  <!-- Unleash logging feature switch (net8.0 and later): LibLog (default) vs Microsoft.Extensions.Logging-only/AOT.
+
+       Consumers set <UnleashUseLibLog>true|false</UnleashUseLibLog>. Default is true
+       (LibLog's reflection-based provider detection keeps working, non-breaking).
+       When publishing trimmed or Native AOT and the property is left unset, it is
+       auto-set to false (LibLog cannot survive trimming) and warning UNLEASH001 is
+       emitted so the choice is never silent. Setting the property explicitly silences
+       the warning. -->
+
+  <!-- The switch applies to every target that consumes the SDK's net8.0 build (net8.0 and later). -->
+  <PropertyGroup>
+    <_UnleashSupportsLibLogSwitch Condition="'$(TargetFramework)' != '' and $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">true</_UnleashSupportsLibLogSwitch>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(_UnleashSupportsLibLogSwitch)' == 'true'">
+    <!-- Record whether we are about to auto-disable (unset + trimming/AOT). -->
+    <_UnleashAutoDisableLibLog Condition="'$(UnleashUseLibLog)' == '' and ('$(PublishAot)' == 'true' or '$(PublishTrimmed)' == 'true')">true</_UnleashAutoDisableLibLog>
+    <!-- Apply the default. -->
+    <UnleashUseLibLog Condition="'$(_UnleashAutoDisableLibLog)' == 'true'">false</UnleashUseLibLog>
+    <UnleashUseLibLog Condition="'$(UnleashUseLibLog)' == ''">true</UnleashUseLibLog>
+  </PropertyGroup>
+
+  <!-- Drives both runtimeconfig.json (runtime AppContext switch) and the ILLink
+       feature (consumed by the SDK's embedded ILLink.Substitutions.xml). -->
+  <ItemGroup Condition="'$(_UnleashSupportsLibLogSwitch)' == 'true'">
+    <RuntimeHostConfigurationOption Include="Unleash.UseLibLog" Value="$(UnleashUseLibLog)" Trim="true" />
+  </ItemGroup>
+
+  <Target Name="_UnleashWarnAutoDisabledLibLog"
+          BeforeTargets="Build;Publish"
+          Condition="'$(_UnleashAutoDisableLibLog)' == 'true'">
+    <Warning Code="UNLEASH001"
+             Text="Unleash: reflection-based LibLog logging was auto-disabled because PublishAot/PublishTrimmed is set. Unleash logs now require UnleashSettings.LoggerFactory. Set &lt;UnleashUseLibLog&gt;true&lt;/UnleashUseLibLog&gt; to keep LibLog, or &lt;UnleashUseLibLog&gt;false&lt;/UnleashUseLibLog&gt; to confirm and silence this warning." />
+  </Target>
+</Project>

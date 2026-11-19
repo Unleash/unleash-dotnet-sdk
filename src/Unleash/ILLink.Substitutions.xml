@@ -1,0 +1,7 @@
+<linker>
+  <assembly fullname="Unleash.Client">
+    <type fullname="Unleash.Logging.UnleashLog">
+      <method signature="System.Boolean get_UseLibLog()" body="stub" value="false" feature="Unleash.UseLibLog" featurevalue="false" />
+    </type>
+  </assembly>
+</linker>
