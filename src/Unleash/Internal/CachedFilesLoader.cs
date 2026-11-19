@@ -31,7 +31,7 @@ namespace Unleash.Internal
         static internal readonly string FeatureToggleFilename = "unleash.toggles.json";
         static internal readonly string EtagFilename = "unleash.etag.txt";
 
-        private static readonly ILog Logger = LogProvider.GetLogger(typeof(CachedFilesLoader));
+        private static readonly ILog Logger = UnleashLog.GetLogger(typeof(CachedFilesLoader));
         private readonly UnleashSettings settings;
         private readonly EventCallbackConfig eventCallbackConfig;
         private readonly IFileSystem fileSystem;

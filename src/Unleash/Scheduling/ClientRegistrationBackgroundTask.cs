@@ -11,7 +11,7 @@ namespace Unleash.Scheduling
 {
     internal class ClientRegistrationBackgroundTask : IUnleashScheduledTask
     {
-        private static readonly ILog Logger = LogProvider.GetLogger(typeof(ClientRegistrationBackgroundTask));
+        private static readonly ILog Logger = UnleashLog.GetLogger(typeof(ClientRegistrationBackgroundTask));
 
         private readonly IUnleashApiClient apiClient;
         private ClientRegistration clientRegistration;

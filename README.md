@@ -31,7 +31,7 @@ Take a look at the demonstration site at [Unleash demo](https://app.unleash-host
 Read more of the main project at [github.com/unleash/unleash](https://github.com/Unleash/unleash)
 
 ## Features
-Supported Frameworks (through binaries for net6.0 and netstandard2.0)
+Supported Frameworks (through binaries for net8.0, net6.0 and netstandard2.0)
 * .Net 6 and above
 * NET Standard 2.0
 * .Net Framework 4.7 and above
@@ -425,7 +425,38 @@ namespace Unleash.Demo.CustomLogging
 }
 ```
 
+### Microsoft.Extensions.Logging (.NET 8+)
 
+On .NET 8 and later you can route Unleash's logs through `Microsoft.Extensions.Logging`. Set the
+`LoggerFactory` property on `UnleashSettings`. A factory set here always takes precedence over LibLog.
+
+```csharp
+var settings = new UnleashSettings()
+{
+    AppName = "dotnet-test",
+    UnleashApi = new Uri("<your-api-url>"),
+    LoggerFactory = myLoggerFactory // from your DI container or LoggerFactory.Create(...)
+};
+```
+
+### Native AOT and trimming (.NET 8+)
+
+LibLog uses reflection, which is not compatible with Native AOT or trimming. To publish an AOT or
+trimmed application, disable LibLog with the `UnleashUseLibLog` MSBuild property and provide a
+`LoggerFactory`:
+
+```xml
+<PropertyGroup>
+  <UnleashUseLibLog>false</UnleashUseLibLog>
+</PropertyGroup>
+```
+
+With LibLog disabled, the trimmer removes its reflection-based code. Logs then flow only through the
+`LoggerFactory` you provide. If none is set, logging is silent.
+
+When you publish with `PublishAot` or `PublishTrimmed` and have not set `UnleashUseLibLog`, the SDK
+disables LibLog and emits warning `UNLEASH001`. Set `<UnleashUseLibLog>` explicitly (`true` or
+`false`) to confirm your choice and silence the warning.
 
 ## Local backup
 By default unleash-client fetches the feature toggles from unleash-server every 20s, and stores the result in temporary .json file which is located in `System.IO.Path.GetTempPath()` directory. This means that if the unleash-server becomes unavailable, the unleash-client will still be able to toggle the features based on the values stored in .json file. As a result of this, the second argument of `IsEnabled` will be returned in two cases:

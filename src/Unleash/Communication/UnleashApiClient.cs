@@ -15,13 +15,16 @@ using Unleash.Internal;
 using Unleash.Logging;
 using Unleash.Metrics;
 using Unleash.Streaming;
+#if NET8_0_OR_GREATER
+using Unleash.Serialization;
+#endif
 
 namespace Unleash.Communication
 {
     internal class UnleashApiClient : IUnleashApiClient
     {
 
-        private static readonly ILog Logger = LogProvider.GetLogger(typeof(UnleashApiClient));
+        private static readonly ILog Logger = UnleashLog.GetLogger(typeof(UnleashApiClient));
 
         private readonly HttpClient httpClient;
         private readonly UnleashApiClientRequestHeaders clientRequestHeaders;
@@ -196,7 +199,11 @@ namespace Unleash.Communication
             using (var request = new HttpRequestMessage(HttpMethod.Post, requestUri))
             {
                 registration.ConnectionId = clientRequestHeaders.ConnectionId;
+#if NET8_0_OR_GREATER
+                request.Content = new StringContent(JsonSerializer.Serialize(registration, UnleashJsonSerializerContext.Default.ClientRegistration), Encoding.UTF8, "application/json");
+#else
                 request.Content = new StringContent(JsonSerializer.Serialize(registration, options), Encoding.UTF8, "application/json");
+#endif
 
                 SetRequestHeaders(request, clientRequestHeaders);
 
@@ -234,7 +241,11 @@ namespace Unleash.Communication
                 Bucket = new Yggdrasil.MetricsBucket(new Dictionary<string, Yggdrasil.FeatureCount>(), DateTimeOffset.UtcNow, DateTimeOffset.UtcNow)
             };
 
+#if NET8_0_OR_GREATER
+            var sendMetricsNode = JsonSerializer.SerializeToNode(clientMetrics, UnleashJsonSerializerContext.Default.ClientMetrics);
+#else
             var sendMetricsNode = JsonSerializer.SerializeToNode(clientMetrics, options);
+#endif
             var metricsNode = JsonNode.Parse(string.IsNullOrEmpty(metrics) ? "{}" : metrics);
 
             if (metricsNode["metrics"] != null)
